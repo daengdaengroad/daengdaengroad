@@ -1,0 +1,42 @@
+{
+  "cafe": [
+    {"name":"포포앤미루","address":"서울 강동구 성내동","lat":37.5303,"lng":127.1289,"phone":"","url":"https://map.kakao.com/link/search/포포앤미루","score":95,"desc":"다양한 견종의 강아지들과 교감할 수 있는 인기 애견카페"},
+    {"name":"뭉스벨리","address":"서울 강동구 고덕동","lat":37.5512,"lng":127.1563,"phone":"","url":"https://map.kakao.com/link/search/뭉스벨리","score":92,"desc":"넓은 실내공간과 운동장 보유"},
+    {"name":"니멍내멍","address":"경기 남양주시 강변북로661번길 23","lat":37.6423,"lng":127.2891,"phone":"","url":"https://map.kakao.com/link/search/니멍내멍","score":90,"desc":"1000평 규모 대형 애견카페, 잔디운동장+루프탑"},
+    {"name":"풀멍파크","address":"경기 양주시 백석읍 양주산성로 484-12","lat":37.8012,"lng":126.9823,"phone":"","url":"https://map.kakao.com/link/search/풀멍파크","score":88,"desc":"800평 운동장과 수영장 보유"},
+    {"name":"견복궁","address":"경기 김포시 운양로 97번길 83-13","lat":37.6234,"lng":126.7123,"phone":"031-982-6261","url":"https://map.kakao.com/link/search/견복궁","score":87,"desc":"테라스+운동장+수영장 올인원 공간"},
+    {"name":"그라운독","address":"경기 성남시 분당구","lat":37.3812,"lng":127.1234,"phone":"","url":"https://map.kakao.com/link/search/그라운독","score":85,"desc":"루프탑 운동장, 멍푸치노 판매"},
+    {"name":"멍트럴파크","address":"경기 시흥시","lat":37.3801,"lng":126.8034,"phone":"","url":"https://map.kakao.com/link/search/멍트럴파크","score":83,"desc":"넓은 부지의 애견 복합 공간"},
+    {"name":"우주꼬맹이","address":"경기 고양시 덕양구","lat":37.6523,"lng":126.8312,"phone":"","url":"https://map.kakao.com/link/search/우주꼬맹이","score":82,"desc":"넓은 운동장과 수영장"},
+    {"name":"어라운드데이","address":"서울 성동구 서울숲","lat":37.5445,"lng":127.0374,"phone":"","url":"https://map.kakao.com/link/search/어라운드데이","score":90,"desc":"서울숲 인근 화이트톤 대형견 가능 카페"},
+    {"name":"보틀팩토리","address":"서울 서대문구 연희동","lat":37.5712,"lng":126.9234,"phone":"","url":"https://map.kakao.com/link/search/보틀팩토리","score":85,"desc":"친환경 애견동반 카페, 전견종 가능"},
+    {"name":"카페꼰띠고","address":"경기 파주시","lat":37.7612,"lng":126.7123,"phone":"","url":"https://map.kakao.com/link/search/카페꼰띠고","score":84,"desc":"모든 견종 가능, 잔디마당 보유"},
+    {"name":"로이테","address":"경기 남양주시 북한강로","lat":37.6823,"lng":127.2412,"phone":"","url":"https://map.kakao.com/link/search/로이테","score":83,"desc":"북한강뷰 대형 베이커리 카페"},
+    {"name":"두리멍쉴","address":"경기 의정부시","lat":37.7423,"lng":127.0534,"phone":"","url":"https://map.kakao.com/link/search/두리멍쉴","score":80,"desc":"넓은 부지 운동장+수영장"},
+    {"name":"포레851","address":"경기 고양시 덕양구 행주산성로 108","lat":37.6234,"lng":126.7823,"phone":"0507-1347-4879","url":"https://map.kakao.com/link/search/포레851","score":86,"desc":"800평 운동장, 수영장, 반려생활 인증"}
+  ],
+  "restaurant": [
+    {"name":"곰스603 용산점","address":"서울 용산구","lat":37.5312,"lng":126.9723,"phone":"","url":"https://map.kakao.com/link/search/곰스603","score":90,"desc":"대형견 가능, 강아지용 삼계죽·오리죽 제공"},
+    {"name":"울타리","address":"경기 고양시","lat":37.6712,"lng":126.8234,"phone":"","url":"https://map.kakao.com/link/search/울타리 고양 애견","score":88,"desc":"애견 동반 고깃집, 강아지 침대요람+야외운동장"},
+    {"name":"149플라밍고","address":"경기 수원시","lat":37.2912,"lng":127.0034,"phone":"","url":"https://map.kakao.com/link/search/149플라밍고","score":87,"desc":"반려생활 어워즈 Best 맛집, 대형견 가능"},
+    {"name":"루이스타운","address":"경기 양주시","lat":37.8123,"lng":127.0234,"phone":"","url":"https://map.kakao.com/link/search/루이스타운","score":86,"desc":"뉴올리언스 컨셉 패밀리 레스토랑, 전견종 가능"},
+    {"name":"테이블드파스타","address":"경기 하남시","lat":37.5423,"lng":127.2134,"phone":"","url":"https://map.kakao.com/link/search/테이블드파스타 하남","score":88,"desc":"대중소형견 모두 가능, 이탈리안 레스토랑"},
+    {"name":"하남숯불닭갈비본점","address":"경기 하남시 미사동로40번길 130","lat":37.5534,"lng":127.2045,"phone":"","url":"https://map.kakao.com/link/search/하남숯불닭갈비본점","score":89,"desc":"수도권 닭갈비 1위, 강아지 메뉴 도그꼬꼬 제공"},
+    {"name":"빠리가옥","address":"서울 종로구 익선동","lat":37.5745,"lng":126.9934,"phone":"","url":"https://map.kakao.com/link/search/빠리가옥","score":85,"desc":"익선동 유일 반려견 동반식당, 프렌치 레스토랑"},
+    {"name":"갈낙집","address":"서울 근교","lat":37.5112,"lng":127.0823,"phone":"","url":"https://map.kakao.com/link/search/갈낙집 애견","score":83,"desc":"펜스 텐트석, 반려견 전용 미니화로"},
+    {"name":"25겹돈가스","address":"경기 가평군","lat":37.8012,"lng":127.5123,"phone":"","url":"https://map.kakao.com/link/search/25겹돈가스 가평","score":84,"desc":"가평 인기 돈가스 맛집, 애견동반 전용공간"},
+    {"name":"밥앤독","address":"경기 가평군","lat":37.7912,"lng":127.5234,"phone":"","url":"https://map.kakao.com/link/search/밥앤독 가평","score":82,"desc":"닭갈비 맛집, 넓은 애견운동장 보유"}
+  ],
+  "park": [
+    {"name":"광교호수공원 애견놀이터","address":"경기 수원시 영통구 광교호수로 57","lat":37.2923,"lng":127.0512,"phone":"031-228-4186","url":"https://map.kakao.com/link/search/광교호수공원 애견놀이터","score":92,"desc":"무료 애견놀이터, 넓은 산책로"},
+    {"name":"장자호수공원 반려동물놀이터","address":"경기 구리시 토평동 697","lat":37.5912,"lng":127.1423,"phone":"","url":"https://map.kakao.com/link/search/장자호수공원 반려동물놀이터","score":90,"desc":"호수 옆 반려동물 전용 놀이터"},
+    {"name":"고덕애견놀이터","address":"경기 평택시 고덕면 궁리 213-2","lat":37.0234,"lng":127.0923,"phone":"","url":"https://map.kakao.com/link/search/고덕애견놀이터","score":88,"desc":"넓은 무료 애견놀이터"},
+    {"name":"낙생대근린공원 반려견놀이터","address":"경기 성남시 분당구 백현동 523","lat":37.3823,"lng":127.1123,"phone":"","url":"https://map.kakao.com/link/search/낙생대근린공원 반려견놀이터","score":86,"desc":"분당 인기 반려견 놀이터"},
+    {"name":"한강공원 반려견놀이터","address":"서울 광진구 자양동","lat":37.5312,"lng":127.0734,"phone":"","url":"https://map.kakao.com/link/search/한강공원 반려견놀이터","score":88,"desc":"한강변 반려견 전용 공간"},
+    {"name":"보라매공원 반려견놀이터","address":"서울 동작구 신대방동","lat":37.4912,"lng":126.9234,"phone":"","url":"https://map.kakao.com/link/search/보라매공원 반려견놀이터","score":85,"desc":"서울 서남권 인기 반려견 놀이터"},
+    {"name":"월드컵공원 반려견놀이터","address":"서울 마포구 상암동","lat":37.5712,"lng":126.8923,"phone":"","url":"https://map.kakao.com/link/search/월드컵공원 반려견놀이터","score":87,"desc":"넓은 잔디 반려견 놀이공간"},
+    {"name":"올림픽공원 반려견놀이터","address":"서울 송파구 방이동","lat":37.5212,"lng":127.1234,"phone":"","url":"https://map.kakao.com/link/search/올림픽공원 반려견놀이터","score":89,"desc":"올림픽공원 내 반려견 전용 구역"},
+    {"name":"폴짝애견놀이터","address":"인천 중구 중산동 1132-14","lat":37.5023,"lng":126.5312,"phone":"","url":"https://map.kakao.com/link/search/폴짝애견놀이터","score":84,"desc":"인천 인기 애견놀이터"},
+    {"name":"두물머리","address":"경기 양평군 양서면 양수리","lat":37.5234,"lng":127.3123,"phone":"","url":"https://map.kakao.com/link/search/두물머리","score":88,"desc":"반려견 산책 명소, 남한강 뷰"}
+  ]
+}

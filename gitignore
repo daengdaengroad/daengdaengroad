@@ -1,0 +1,5 @@
+.env
+node_modules/
+course_cache.json
+reviews.json
+*.log
