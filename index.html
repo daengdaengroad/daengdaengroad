@@ -378,14 +378,14 @@ body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(145deg,#E8
   <div class="section-pad" style="padding-top:0">
     <div class="section-title">장소</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px">
-      <button class="mood-btn selected" onclick="selectMood(this)" style="padding:0;overflow:hidden;border-radius:var(--radius)">
+      <button class="mood-btn selected" onclick="selectMood(this)" data-activity="애견카페" style="padding:0;overflow:hidden;border-radius:var(--radius)">
         <div style="position:relative;width:100%;height:110px">
           <img src="https://daengdaengroad-production.up.railway.app/public/cafe.jpg" style="width:100%;height:100%;object-fit:cover;display:block">
           <div style="position:absolute;inset:0;background:linear-gradient(transparent 45%,rgba(58,31,2,.7))"></div>
           <div style="position:absolute;bottom:12px;left:0;right:0;text-align:center;color:#fff;font-size:14px;font-weight:800;text-shadow:0 1px 4px rgba(0,0,0,.5);font-family:'Noto Sans KR',sans-serif">애견카페</div>
         </div>
       </button>
-      <button class="mood-btn" onclick="selectMood(this)" style="padding:0;overflow:hidden;border-radius:var(--radius)">
+      <button class="mood-btn" onclick="selectMood(this)" data-activity="애견식당" style="padding:0;overflow:hidden;border-radius:var(--radius)">
         <div style="position:relative;width:100%;height:110px">
           <img src="https://daengdaengroad-production.up.railway.app/public/food.png" style="width:100%;height:100%;object-fit:cover;display:block">
           <div style="position:absolute;inset:0;background:linear-gradient(transparent 45%,rgba(58,31,2,.7))"></div>
@@ -698,7 +698,7 @@ function showToast(msg){const t=document.getElementById('toast');t.innerHTML=msg
 // ── 핵심: AI 코스 생성 ──
 async function generateCourse(){
   const profile=loadProfile()||{name:'초코',breed:'말티즈',size:'small'};
-  const activity=document.querySelector('.mood-btn.selected .mood-label')?.textContent?.includes('카페') ? '애견카페' : '애견식당';
+  const activity=document.querySelector('.mood-btn.selected')?.dataset?.activity || '애견카페';
   const duration=currentDurationLabel||'1시간 거리';
 
   const loadingText=document.getElementById('loadingText');
