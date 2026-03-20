@@ -900,7 +900,7 @@ function saveCourse(course) {
   localStorage.setItem('savedCourses', JSON.stringify(saved));
   // 결과 화면 하트 업데이트
   if(window._courses) {
-    const activity = document.querySelector('.mood-btn.selected .mood-label')?.textContent?.includes('카페') ? '애견카페' : '애견식당';
+    const activity = document.querySelector('.mood-btn.selected')?.dataset?.activity || '애견카페';
     renderCourses(window._courses, document.getElementById('resultSubtitle')?.textContent?.split('와')[0]||'', activity, '');
   }
 }
