@@ -4,30 +4,6 @@ const cors = require('cors');
 const axios = require('axios');
 const path = require('path');
 const fs = require('fs');
-const mongoose = require('mongoose');
-
-// ── MongoDB 연결 ──
-const MONGODB_URI = process.env.MONGODB_URI;
-if (MONGODB_URI) {
-  mongoose.connect(MONGODB_URI)
-    .then(() => console.log('✅ MongoDB 연결 성공!'))
-    .catch(e => console.error('❌ MongoDB 연결 실패:', e.message));
-} else {
-  console.log('⚠️ MONGODB_URI 없음 - 파일 저장 모드로 동작');
-}
-
-// ── 후기 스키마 ──
-const reviewSchema = new mongoose.Schema({
-  placeId:   { type: String, required: true, index: true },
-  placeName: String,
-  dogName:   String,
-  dogBreed:  String,
-  stars:     Number,
-  text:      String,
-  date:      String,
-  createdAt: { type: Date, default: Date.now }
-});
-const Review = mongoose.models.Review || mongoose.model('Review', reviewSchema);
 
 const app = express();
 app.use(cors({
@@ -74,6 +50,7 @@ function getGroqKey() {
 const NAVER_CLIENT_ID = process.env.NAVER_CLIENT_ID;
 const NAVER_CLIENT_SECRET = process.env.NAVER_CLIENT_SECRET;
 const TOUR_API_KEY = process.env.TOUR_API_KEY;
+const OPENWEATHER_API_KEY = process.env.OPENWEATHER_API_KEY;
 
 // ── 활동 유형별 검색 키워드 & 반경 ──
 const ACTIVITY_CONFIG = {
@@ -570,6 +547,7 @@ app.post('/api/generate-course', async (req, res) => {
         title: `${firstName} 코스`,
         theme: catOrder.map(c => c==='cafe'?'카페':c==='restaurant'?'식당':'공원').join('→'),
         driveTime: calcDriveTime(maxDist),
+        driveMin: Math.round((maxDist / 50) * 60) + 20,
         totalDistance: parseFloat(maxDist.toFixed(1)),
         places: places.map((p, idx) => ({
           name: p.name,
@@ -843,20 +821,9 @@ function saveReviews(data) {
 }
 
 // ── 후기 조회 ──
-app.get('/api/reviews/:placeId', async (req, res) => {
-  const placeId = decodeURIComponent(req.params.placeId);
-  try {
-    if (mongoose.connection.readyState === 1) {
-      // MongoDB 모드
-      const placeReviews = await Review.find({ placeId }).sort({ createdAt: -1 }).limit(100).lean();
-      const avg = placeReviews.length
-        ? (placeReviews.reduce((s, r) => s + r.stars, 0) / placeReviews.length).toFixed(1)
-        : null;
-      return res.json({ reviews: placeReviews, avg, count: placeReviews.length });
-    }
-  } catch(e) { console.error('MongoDB 후기 조회 오류:', e.message); }
-  // 파일 폴백
+app.get('/api/reviews/:placeId', (req, res) => {
   const reviews = loadReviews();
+  const placeId = decodeURIComponent(req.params.placeId);
   const placeReviews = reviews[placeId] || [];
   const avg = placeReviews.length
     ? (placeReviews.reduce((s, r) => s + r.stars, 0) / placeReviews.length).toFixed(1)
@@ -865,34 +832,26 @@ app.get('/api/reviews/:placeId', async (req, res) => {
 });
 
 // ── 후기 작성 ──
-app.post('/api/reviews', async (req, res) => {
+app.post('/api/reviews', (req, res) => {
   const { placeId, placeName, dogName, dogBreed, stars, text } = req.body;
   if (!placeId || !text || !stars) return res.status(400).json({ error: '필수 항목 누락' });
-  const reviewData = {
-    placeId,
+  const reviews = loadReviews();
+  if (!reviews[placeId]) reviews[placeId] = [];
+  const review = {
+    id: Date.now(),
     placeName,
     dogName: dogName || '익명',
     dogBreed: dogBreed || '',
     stars: parseInt(stars),
     text,
     date: new Date().toLocaleDateString('ko-KR'),
+    createdAt: new Date().toISOString()
   };
-  try {
-    if (mongoose.connection.readyState === 1) {
-      // MongoDB 모드
-      const review = await Review.create(reviewData);
-      console.log(`후기 저장(MongoDB): ${placeName} - ${dogName} (★${stars})`);
-      return res.json({ success: true, review });
-    }
-  } catch(e) { console.error('MongoDB 후기 저장 오류:', e.message); }
-  // 파일 폴백
-  const reviews = loadReviews();
-  if (!reviews[placeId]) reviews[placeId] = [];
-  const review = { id: Date.now(), ...reviewData, createdAt: new Date().toISOString() };
   reviews[placeId].unshift(review);
+  // 장소당 최대 100개
   if (reviews[placeId].length > 100) reviews[placeId] = reviews[placeId].slice(0, 100);
   saveReviews(reviews);
-  console.log(`후기 저장(파일): ${placeName} - ${dogName} (★${stars})`);
+  console.log(`후기 저장: ${placeName} - ${dogName} (★${stars})`);
   res.json({ success: true, review });
 });
 
@@ -934,6 +893,73 @@ app.get('/api/place-image', async (req, res) => {
   }
   placeImgCache[name] = '';
   res.json({ url: '' });
+});
+
+// ── 날씨 API ──
+app.get('/api/weather', async (req, res) => {
+  const lat = parseFloat(req.query.lat);
+  const lng = parseFloat(req.query.lng);
+  const driveMin = parseInt(req.query.driveMin) || 30; // 드라이브 예상 시간(분)
+
+  if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
+    return res.status(400).json({ error: '위치 정보 없음' });
+  }
+
+  try {
+    // 현재 날씨 + 3시간 예보 동시 요청
+    const [currentRes, forecastRes] = await Promise.all([
+      axios.get(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lng}&appid=${OPENWEATHER_API_KEY}&units=metric&lang=kr`),
+      axios.get(`https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lng}&appid=${OPENWEATHER_API_KEY}&units=metric&lang=kr&cnt=4`)
+    ]);
+
+    const current = currentRes.data;
+    const forecast = forecastRes.data;
+
+    // 도착 예정 시간대 예보 (driveMin 후)
+    const arrivalIndex = Math.min(Math.floor(driveMin / 90), 3); // 3시간 단위
+    const arrivalForecast = forecast.list[arrivalIndex];
+
+    // 날씨 상태 분류
+    function classifyWeather(weatherId) {
+      if (weatherId >= 200 && weatherId < 300) return { icon: '⛈️', label: '천둥번개', bad: true };
+      if (weatherId >= 300 && weatherId < 400) return { icon: '🌦️', label: '이슬비', bad: true };
+      if (weatherId >= 500 && weatherId < 600) return { icon: '🌧️', label: '비', bad: true };
+      if (weatherId >= 600 && weatherId < 700) return { icon: '❄️', label: '눈', bad: true };
+      if (weatherId >= 700 && weatherId < 800) return { icon: '🌫️', label: '안개', bad: false };
+      if (weatherId === 800) return { icon: '☀️', label: '맑음', bad: false };
+      if (weatherId === 801) return { icon: '🌤️', label: '구름 조금', bad: false };
+      if (weatherId <= 804) return { icon: '☁️', label: '흐림', bad: false };
+      return { icon: '🌡️', label: '보통', bad: false };
+    }
+
+    const currentWeather = classifyWeather(current.weather[0].id);
+    const arrivalWeather = classifyWeather(arrivalForecast.weather[0].id);
+
+    // 도착 시간 문자열
+    const arrivalTime = new Date(Date.now() + driveMin * 60 * 1000);
+    const arrivalHour = arrivalTime.getHours();
+    const arrivalLabel = `${arrivalHour}시경`;
+
+    res.json({
+      current: {
+        ...currentWeather,
+        temp: Math.round(current.main.temp),
+        desc: current.weather[0].description
+      },
+      arrival: {
+        ...arrivalWeather,
+        temp: Math.round(arrivalForecast.main.temp),
+        desc: arrivalForecast.weather[0].description,
+        timeLabel: arrivalLabel
+      },
+      warning: arrivalWeather.bad
+        ? `${arrivalLabel} ${arrivalWeather.icon} ${arrivalWeather.label} 예보`
+        : null
+    });
+  } catch (e) {
+    console.error('날씨 API 오류:', e.message);
+    res.status(500).json({ error: '날씨 정보를 가져올 수 없어요' });
+  }
 });
 
 // ── 헬스체크 ──

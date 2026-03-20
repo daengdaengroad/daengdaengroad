@@ -523,7 +523,6 @@ body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(145deg,#E8
 let dogSize='small', editSize='small';
 let currentRadius=20000, currentDurationLabel='30분 거리';
 let currentLocation='대구 남구', currentLat=35.8562, currentLng=128.5327;
-let currentActivity='애견카페';
 let currentPhoto=null;
 const SERVER = window.location.origin.includes('localhost') ? 'http://localhost:3000' : 'https://daengdaengroad-production.up.railway.app';
 
@@ -686,7 +685,7 @@ async function onManualInput(input){
 }
 
 function selectSize(el,size){dogSize=size;document.querySelectorAll('#page-onboarding .size-btn').forEach(b=>b.classList.remove('selected'));el.classList.add('selected');}
-function selectMood(el){document.querySelectorAll('.mood-btn').forEach(b=>b.classList.remove('selected'));el.classList.add('selected');currentActivity=el.dataset.activity||'애견카페';}
+function selectMood(el){document.querySelectorAll('.mood-btn').forEach(b=>b.classList.remove('selected'));el.classList.add('selected');}
 function selectDuration(el){
   document.querySelectorAll('.duration-btn').forEach(b=>b.classList.remove('selected'));
   el.classList.add('selected');
@@ -699,7 +698,7 @@ function showToast(msg){const t=document.getElementById('toast');t.innerHTML=msg
 // ── 핵심: AI 코스 생성 ──
 async function generateCourse(){
   const profile=loadProfile()||{name:'초코',breed:'말티즈',size:'small'};
-  const activity = currentActivity || document.querySelector('.mood-btn.selected')?.dataset?.activity || '애견카페';
+  const activity=document.querySelector('.mood-btn.selected')?.dataset?.activity || '애견카페';
   const duration=currentDurationLabel||'1시간 거리';
 
   const loadingText=document.getElementById('loadingText');
@@ -792,10 +791,15 @@ function renderCourses(courses,dogName,activity,duration){
     const distNum = typeof c.totalDistance === 'number' ? c.totalDistance : parseFloat(String(c.totalDistance||'').replace(/[^0-9.]/g,''));
     const dist = isNaN(distNum) || !distNum ? '' : `${distNum}`;
     const saved = isSaved(c.title);
+    // 드라이브 시간(분) 추출
+    const driveMin = c.driveMin || 30;
     return `
     <div class="course-card" onclick="showDetail(${i})">
       <div id="thumb-${i}" style="width:100%;height:160px;overflow:hidden;flex-shrink:0;position:relative;background:linear-gradient(135deg,var(--amber-lt),var(--cream))">
         <div style="position:absolute;bottom:0;left:0;right:0;height:60px;background:linear-gradient(transparent,rgba(65,36,2,0.3))"></div>
+      </div>
+      <div id="weather-${i}" style="margin:0 16px 0;padding:8px 12px;background:var(--cream);border-radius:var(--radius-sm);font-size:12px;color:var(--brown-md);display:flex;align-items:center;gap:6px;min-height:32px">
+        <span style="opacity:.5">날씨 확인 중...</span>
       </div>
       <div class="course-card-header">
         <div style="display:flex;justify-content:space-between;align-items:flex-start">
@@ -831,6 +835,51 @@ function renderCourses(courses,dogName,activity,duration){
       <div class="course-places">${(c.places||[]).map(p=>`<span class="place-chip ${cc}">&#x2605; ${p.name}</span>`).join('')}</div>
     </div>
   `}).join('');
+
+  // 날씨 비동기 로드
+  setTimeout(() => loadWeatherForCourses(courses), 200);
+}
+
+async function loadWeatherForCourses(courses) {
+  if (!currentLat || !currentLng) return;
+  try {
+    // 코스별 드라이브 시간이 다를 수 있으니 대표값(첫 번째 코스)으로 한 번만 호출
+    const driveMin = courses[0]?.driveMin || 30;
+    const res = await fetch(`${SERVER}/api/weather?lat=${currentLat}&lng=${currentLng}&driveMin=${driveMin}`);
+    if (!res.ok) return;
+    const w = await res.json();
+
+    courses.forEach((c, i) => {
+      const el = document.getElementById(`weather-${i}`);
+      if (!el) return;
+
+      const isBad = w.arrival?.bad;
+      const bg = isBad ? '#FFF0F0' : '#F0FFF8';
+      const color = isBad ? '#C0392B' : '#1A9470';
+
+      el.style.background = bg;
+      el.style.color = color;
+
+      if (w.warning) {
+        el.innerHTML = `
+          <span style="font-size:16px">${w.arrival.icon}</span>
+          <span style="font-weight:700">${w.arrival.timeLabel} 도착 예정 · ${w.arrival.label}</span>
+          <span style="opacity:.7">${w.arrival.temp}°C</span>
+          <span style="margin-left:auto;font-size:10px;font-weight:700;background:rgba(192,57,43,.12);padding:2px 8px;border-radius:10px">주의</span>
+        `;
+      } else {
+        el.innerHTML = `
+          <span style="font-size:16px">${w.arrival.icon}</span>
+          <span style="font-weight:700">${w.arrival.timeLabel} 도착 예정 · ${w.arrival.label}</span>
+          <span style="opacity:.7">${w.arrival.temp}°C</span>
+          <span style="margin-left:auto;font-size:10px;font-weight:700;background:rgba(26,148,112,.12);padding:2px 8px;border-radius:10px">드라이브 좋아요</span>
+        `;
+      }
+    });
+  } catch(e) {
+    // 날씨 실패해도 코스는 정상 표시
+    document.querySelectorAll('[id^="weather-"]').forEach(el => el.style.display = 'none');
+  }
 }
 
 // ── 탭 전환 ──
