@@ -4,6 +4,30 @@ const cors = require('cors');
 const axios = require('axios');
 const path = require('path');
 const fs = require('fs');
+const mongoose = require('mongoose');
+
+// ── MongoDB 연결 ──
+const MONGODB_URI = process.env.MONGODB_URI;
+if (MONGODB_URI) {
+  mongoose.connect(MONGODB_URI)
+    .then(() => console.log('✅ MongoDB 연결 성공!'))
+    .catch(e => console.error('❌ MongoDB 연결 실패:', e.message));
+} else {
+  console.log('⚠️ MONGODB_URI 없음 - 파일 저장 모드로 동작');
+}
+
+// ── 후기 스키마 ──
+const reviewSchema = new mongoose.Schema({
+  placeId:   { type: String, required: true, index: true },
+  placeName: String,
+  dogName:   String,
+  dogBreed:  String,
+  stars:     Number,
+  text:      String,
+  date:      String,
+  createdAt: { type: Date, default: Date.now }
+});
+const Review = mongoose.models.Review || mongoose.model('Review', reviewSchema);
 
 const app = express();
 app.use(cors({
@@ -819,9 +843,20 @@ function saveReviews(data) {
 }
 
 // ── 후기 조회 ──
-app.get('/api/reviews/:placeId', (req, res) => {
-  const reviews = loadReviews();
+app.get('/api/reviews/:placeId', async (req, res) => {
   const placeId = decodeURIComponent(req.params.placeId);
+  try {
+    if (mongoose.connection.readyState === 1) {
+      // MongoDB 모드
+      const placeReviews = await Review.find({ placeId }).sort({ createdAt: -1 }).limit(100).lean();
+      const avg = placeReviews.length
+        ? (placeReviews.reduce((s, r) => s + r.stars, 0) / placeReviews.length).toFixed(1)
+        : null;
+      return res.json({ reviews: placeReviews, avg, count: placeReviews.length });
+    }
+  } catch(e) { console.error('MongoDB 후기 조회 오류:', e.message); }
+  // 파일 폴백
+  const reviews = loadReviews();
   const placeReviews = reviews[placeId] || [];
   const avg = placeReviews.length
     ? (placeReviews.reduce((s, r) => s + r.stars, 0) / placeReviews.length).toFixed(1)
@@ -830,26 +865,34 @@ app.get('/api/reviews/:placeId', (req, res) => {
 });
 
 // ── 후기 작성 ──
-app.post('/api/reviews', (req, res) => {
+app.post('/api/reviews', async (req, res) => {
   const { placeId, placeName, dogName, dogBreed, stars, text } = req.body;
   if (!placeId || !text || !stars) return res.status(400).json({ error: '필수 항목 누락' });
-  const reviews = loadReviews();
-  if (!reviews[placeId]) reviews[placeId] = [];
-  const review = {
-    id: Date.now(),
+  const reviewData = {
+    placeId,
     placeName,
     dogName: dogName || '익명',
     dogBreed: dogBreed || '',
     stars: parseInt(stars),
     text,
     date: new Date().toLocaleDateString('ko-KR'),
-    createdAt: new Date().toISOString()
   };
+  try {
+    if (mongoose.connection.readyState === 1) {
+      // MongoDB 모드
+      const review = await Review.create(reviewData);
+      console.log(`후기 저장(MongoDB): ${placeName} - ${dogName} (★${stars})`);
+      return res.json({ success: true, review });
+    }
+  } catch(e) { console.error('MongoDB 후기 저장 오류:', e.message); }
+  // 파일 폴백
+  const reviews = loadReviews();
+  if (!reviews[placeId]) reviews[placeId] = [];
+  const review = { id: Date.now(), ...reviewData, createdAt: new Date().toISOString() };
   reviews[placeId].unshift(review);
-  // 장소당 최대 100개
   if (reviews[placeId].length > 100) reviews[placeId] = reviews[placeId].slice(0, 100);
   saveReviews(reviews);
-  console.log(`후기 저장: ${placeName} - ${dogName} (★${stars})`);
+  console.log(`후기 저장(파일): ${placeName} - ${dogName} (★${stars})`);
   res.json({ success: true, review });
 });
 
