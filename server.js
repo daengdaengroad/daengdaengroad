@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
@@ -6,10 +7,11 @@ const fs = require('fs');
 
 const app = express();
 app.use(cors());
+app.use('/public', express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 app.use(express.static(__dirname));
 app.get('/app', (req, res) => {
-  res.sendFile(path.join(__dirname, 'daengdaengroad.html'));
+  res.sendFile(path.join(__dirname, 'index.html'));
 });
 app.get('/manifest.json', (req, res) => {
   res.sendFile(path.join(__dirname, 'manifest.json'));
@@ -65,13 +67,13 @@ const ACTIVITY_CONFIG = {
 
 const DURATION_CONFIG = {
   '30분 거리':  { minKm: 0,  maxKm: 20,  driveMin: 30,  label: '차로 30분 이내' },
-  '1시간 이상': { minKm: 50, maxKm: 100, driveMin: 60,  label: '차로 1시간 이상' },
+  '1시간 거리': { minKm: 50, maxKm: 100, driveMin: 60,  label: '차로 1시간 이상' },
   // 하위 호환
   '1시간 거리': { minKm: 15, maxKm: 50,  driveMin: 60,  label: '차로 1시간 이내' },
   '2시간 이상': { minKm: 50, maxKm: 100, driveMin: 120, label: '차로 2시간 전후' },
 };
 const RADIUS_BY_DURATION = {
-  '30분 거리': 20000, '1시간 이상': 100000,
+  '30분 거리': 20000, '1시간 거리': 100000,
   '1시간 거리': 50000, '2시간 이상': 100000,
   '1시간': 20000, '반나절': 50000, '하루종일': 100000
 };
@@ -343,9 +345,9 @@ app.post('/api/generate-course', async (req, res) => {
       searchKakaoMultiRadius(cafeKeywords, lat, lng, radius, minKm),
       searchKakaoMultiRadius(restaurantKeywords, lat, lng, radius, minKm),
       searchKakaoMultiRadius(parkKeywords, lat, lng, radius, minKm),
-      Promise.all(cafeKeywords.slice(0,3).map(q => searchNaverPlaces(q, 5))).then(r => r.flat()),
-      Promise.all(restaurantKeywords.slice(0,3).map(q => searchNaverPlaces(q, 5))).then(r => r.flat()),
-      Promise.all(parkKeywords.slice(0,3).map(q => searchNaverPlaces(q, 5))).then(r => r.flat()),
+      Promise.all(cafeKeywords.slice(0,3).map(q => searchNaverPlaces(q, 10))).then(r => r.flat()),
+      Promise.all(restaurantKeywords.slice(0,3).map(q => searchNaverPlaces(q, 10))).then(r => r.flat()),
+      Promise.all(parkKeywords.slice(0,3).map(q => searchNaverPlaces(q, 10))).then(r => r.flat()),
     ]);
 
     // 카테고리별 거리 필터링 및 태그 부착
@@ -400,9 +402,9 @@ app.post('/api/generate-course', async (req, res) => {
         .filter(p => { if(seen.has(p.name)) return false; seen.add(p.name); return true; })
         .sort((a,b) => getScore(b) - getScore(a)); // 평점 높은 순
     }
-    const cafeFinal = dedupByName(cafePlaces).slice(0, 10);
-    const restaurantFinal = dedupByName(restaurantPlaces).slice(0, 10);
-    const parkFinal = dedupByName(parkPlaces).slice(0, 10);
+    const cafeFinal = dedupByName(cafePlaces).slice(0, 20);
+    const restaurantFinal = dedupByName(restaurantPlaces).slice(0, 20);
+    const parkFinal = dedupByName(parkPlaces).slice(0, 20);
 
     console.log('카페 상위:', cafeFinal.slice(0,3).map(p=>{
       const r=reviewData[p.name]||[];
@@ -511,7 +513,7 @@ app.post('/api/generate-course', async (req, res) => {
     // 코스 3개 생성 (각 카테고리에서 랜덤 1개씩 선택)
     const builtCourses = [];
     const usedNames = new Set();
-    const courseCount = Math.min(10, Math.max(cafeFinal.length, restaurantFinal.length, parkFinal.length));
+    const courseCount = Math.min(20, Math.max(cafeFinal.length, restaurantFinal.length, parkFinal.length));
 
     for (let i = 0; i < courseCount; i++) {
       const places = [];
