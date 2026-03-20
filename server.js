@@ -6,7 +6,17 @@ const path = require('path');
 const fs = require('fs');
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+// 정적 파일 CORS 헤더
+app.use('/public', (req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  next();
+});
 app.use('/public', express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 app.use(express.static(__dirname));
