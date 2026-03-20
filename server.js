@@ -762,7 +762,7 @@ function gridLat(lat) { return Math.round(lat / 0.09) * 0.09; }   // ~10km
 function gridLng(lng) { return Math.round(lng / 0.11) * 0.11; }   // ~10km
 
 function getCacheKey(lat, lng, activity, duration) {
-  return `v3_${gridLat(lat).toFixed(3)}_${gridLng(lng).toFixed(3)}_${activity}_${duration}`;
+  return `v4_${gridLat(lat).toFixed(3)}_${gridLng(lng).toFixed(3)}_${activity}_${duration}`;
 }
 
 function getFromCache(key) {
