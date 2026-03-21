@@ -362,6 +362,9 @@ body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(145deg,#E8
         </div>
         <p style="font-size:12px;color:var(--brown-lt);margin-top:3px">강아지와 함께하는 드라이브 코스 &#x1F697;</p>
       </div>
+      <button onclick="quickShowVaccine()" style="background:var(--teal-lt);border:1.5px solid var(--teal);border-radius:20px;padding:8px 12px;font-size:11px;font-weight:700;color:var(--teal);cursor:pointer;font-family:'Noto Sans KR',sans-serif;display:flex;align-items:center;gap:5px;white-space:nowrap">
+        💉 접종확인
+      </button>
     </div>
     <div class="hero-banner" id="heroBanner" onclick="openPhotoViewer()">
       <div class="hero-bg-empty" id="heroBgEmpty">&#x1F436;</div>
@@ -535,7 +538,104 @@ body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(145deg,#E8
   <button class="start-btn" onclick="startDrive()">&#x1F697; 드라이브 시작하기</button>
 </div>
 
-<!-- 하단 탭 -->
+<!-- PAGE 7: 내 강아지 -->
+<div class="page" id="page-mydog">
+  <div class="result-header">
+    <h2>내 강아지</h2>
+    <p id="mydogSubtitle">프로필 & 예방접종 수첩</p>
+  </div>
+
+  <!-- 강아지 프로필 카드 -->
+  <div style="margin:12px 16px;background:var(--white);border-radius:20px;padding:20px;box-shadow:var(--shadow-md);display:flex;align-items:center;gap:16px">
+    <div id="mydogPhoto" onclick="openEditModal()" style="width:72px;height:72px;border-radius:50%;background:var(--amber-lt);border:2px solid var(--amber);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:32px;overflow:hidden;cursor:pointer">🐶</div>
+    <div style="flex:1">
+      <div id="mydogName" style="font-size:20px;font-weight:900;color:var(--brown);font-family:'Gowun Dodum',sans-serif">초코</div>
+      <div id="mydogBreed" style="font-size:13px;color:var(--gray);margin-top:2px">말티즈 · 소형견</div>
+    </div>
+    <button onclick="openEditModal()" style="background:var(--amber-lt);border:1.5px solid var(--amber);border-radius:20px;padding:7px 14px;font-size:12px;font-weight:700;color:var(--amber);cursor:pointer;font-family:'Noto Sans KR',sans-serif">수정 ✎</button>
+  </div>
+
+  <!-- 예방접종 수첩 섹션 -->
+  <div style="margin:0 16px 16px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div style="font-size:15px;font-weight:900;color:var(--brown)">💉 예방접종 수첩</div>
+      <button onclick="showVaccineAddModal()" style="background:var(--amber);border:none;border-radius:20px;padding:7px 14px;font-size:12px;font-weight:700;color:#fff;cursor:pointer;font-family:'Noto Sans KR',sans-serif">+ 접종 추가</button>
+    </div>
+    <div id="vaccineList" style="display:flex;flex-direction:column;gap:10px">
+      <div style="text-align:center;padding:32px;background:var(--white);border-radius:16px;color:var(--gray);font-size:13px;box-shadow:var(--shadow-sm)">
+        <div style="font-size:36px;margin-bottom:8px">💉</div>
+        <div style="font-weight:600;color:var(--brown-lt)">아직 접종 기록이 없어요</div>
+        <div style="font-size:12px;margin-top:4px">+ 접종 추가 버튼을 눌러 등록하세요</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 접종 추가 모달 -->
+<div class="modal-backdrop" id="vaccineModal" onclick="closeVaccineModal(event)">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">예방접종 등록</div>
+    <div class="modal-subtitle">접종 사진과 정보를 입력해주세요</div>
+
+    <!-- 사진 업로드 -->
+    <div style="margin-bottom:16px">
+      <div style="font-size:11px;font-weight:700;color:var(--brown-md);margin-bottom:8px;letter-spacing:.5px">접종 사진/문서</div>
+      <div id="vaccinePhotoPreview" onclick="triggerPhotoUpload('vaccinePhoto')" style="width:100%;height:140px;background:var(--cream);border:2px dashed var(--gray-lt);border-radius:var(--radius);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;position:relative">
+        <div id="vaccinePhotoPlaceholder" style="text-align:center">
+          <div style="font-size:32px">📷</div>
+          <div style="font-size:13px;color:var(--gray);margin-top:6px;font-weight:600">사진 추가하기</div>
+          <div style="font-size:11px;color:var(--gray-lt);margin-top:2px">접종 증명서 / 수첩 촬영</div>
+        </div>
+      </div>
+      <input type="file" id="vaccinePhoto" accept="image/*" capture="environment" style="display:none" onchange="handleVaccinePhoto(this)">
+    </div>
+
+    <!-- 접종 종류 -->
+    <div class="form-group">
+      <label class="form-label">접종 종류</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px" id="vaccineTypeGrid">
+        <button class="size-btn" onclick="selectVaccineType(this,'광견병')"><span>💉</span>광견병</button>
+        <button class="size-btn" onclick="selectVaccineType(this,'DHPPL')"><span>💉</span>DHPPL</button>
+        <button class="size-btn" onclick="selectVaccineType(this,'켄넬코프')"><span>💉</span>켄넬코프</button>
+        <button class="size-btn" onclick="selectVaccineType(this,'코로나')"><span>💉</span>코로나</button>
+        <button class="size-btn" onclick="selectVaccineType(this,'심장사상충')"><span>💊</span>심장사상충</button>
+        <button class="size-btn" onclick="selectVaccineType(this,'기타')"><span>📋</span>기타</button>
+      </div>
+      <input class="form-input" id="vaccineTypeDirect" type="text" placeholder="직접 입력 (기타 선택 시)" style="display:none">
+    </div>
+
+    <!-- 접종일 & 다음 접종일 -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">접종일</label>
+        <input class="form-input" id="vaccineDate" type="date" style="font-size:14px">
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">다음 접종일</label>
+        <input class="form-input" id="vaccineNextDate" type="date" style="font-size:14px">
+      </div>
+    </div>
+
+    <button class="btn-primary" onclick="saveVaccine()">저장하기 ✓</button>
+    <div style="height:8px"></div>
+  </div>
+</div>
+
+<!-- 접종 전체화면 뷰어 -->
+<div id="vaccineViewer" style="display:none;position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.95);z-index:600;flex-direction:column;align-items:center;justify-content:center">
+  <div style="position:absolute;top:0;left:0;right:0;padding:16px 20px;display:flex;justify-content:space-between;align-items:center">
+    <div id="vaccineViewerTitle" style="color:#fff;font-size:16px;font-weight:700;font-family:'Noto Sans KR',sans-serif"></div>
+    <button onclick="closeVaccineViewer()" style="background:rgba(255,255,255,.2);border:none;color:#fff;font-size:18px;width:36px;height:36px;border-radius:50%;cursor:pointer">✕</button>
+  </div>
+  <img id="vaccineViewerImg" style="max-width:100%;max-height:75%;object-fit:contain;border-radius:8px;padding:0 16px">
+  <div id="vaccineViewerInfo" style="color:rgba(255,255,255,.8);font-size:13px;margin-top:16px;text-align:center;line-height:1.8;padding:0 20px"></div>
+  <div style="display:flex;gap:12px;margin-top:20px">
+    <button id="vaccineShareBtn" onclick="shareVaccineQR()" style="background:var(--amber);border:none;border-radius:20px;padding:10px 20px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;font-family:'Noto Sans KR',sans-serif">QR 공유 📲</button>
+  </div>
+</div>
+
+
 <div class="bottom-tab" id="bottomTab" style="display:none">
   <div class="tab-item active" id="tab-home" onclick="switchTab('main')">
     <img src="https://daengdaengroad-production.up.railway.app/public/home.png" style="width:36px;height:36px;object-fit:contain;border-radius:8px">
@@ -545,7 +645,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(145deg,#E8
     <img src="https://daengdaengroad-production.up.railway.app/public/heart.png" style="width:36px;height:36px;object-fit:contain;border-radius:8px">
     <div class="tab-label">저장</div>
   </div>
-  <div class="tab-item" id="tab-profile" onclick="openEditModal()">
+  <div class="tab-item" id="tab-profile" onclick="switchTab('mydog')">
     <img src="https://daengdaengroad-production.up.railway.app/public/mydog.png" style="width:36px;height:36px;object-fit:contain;border-radius:8px">
     <div class="tab-label">내 강아지</div>
   </div>
@@ -1063,7 +1163,172 @@ function switchTab(tab) {
   document.querySelectorAll('.tab-item').forEach(t=>t.classList.remove('active'));
   document.getElementById('tab-'+tab)?.classList.add('active');
   if(tab==='saved') { renderSaved(); goPage('saved'); }
+  else if(tab==='mydog') { renderMyDog(); goPage('mydog'); }
   else goPage(tab);
+}
+
+function renderMyDog() {
+  const p = loadProfile()||{name:'초코',breed:'말티즈',size:'small'};
+  const sl = p.size==='small'?'소형견':p.size==='medium'?'중형견':'대형견';
+  document.getElementById('mydogName').textContent = p.name||'초코';
+  document.getElementById('mydogBreed').textContent = (p.breed||'말티즈')+' · '+sl;
+  // 프로필 사진
+  const photoEl = document.getElementById('mydogPhoto');
+  if(p.photo){
+    photoEl.innerHTML=`<img src="${p.photo}" style="width:100%;height:100%;object-fit:cover">`;
+  } else {
+    photoEl.innerHTML='🐶';
+  }
+  renderVaccineList();
+}
+
+// ── 예방접종 관련 ──
+let currentVaccineType = '';
+let currentVaccinePhoto = '';
+
+function getVaccines() { return JSON.parse(localStorage.getItem('daengdaeng_vaccines')||'[]'); }
+function saveVaccines(v) { localStorage.setItem('daengdaeng_vaccines', JSON.stringify(v)); }
+
+function renderVaccineList() {
+  const vaccines = getVaccines();
+  const container = document.getElementById('vaccineList');
+  if(!vaccines.length) {
+    container.innerHTML=`<div style="text-align:center;padding:32px;background:var(--white);border-radius:16px;color:var(--gray);font-size:13px;box-shadow:var(--shadow-sm)"><div style="font-size:36px;margin-bottom:8px">💉</div><div style="font-weight:600;color:var(--brown-lt)">아직 접종 기록이 없어요</div><div style="font-size:12px;margin-top:4px">+ 접종 추가 버튼을 눌러 등록하세요</div></div>`;
+    return;
+  }
+  const today = new Date().toISOString().split('T')[0];
+  container.innerHTML = vaccines.map((v,i)=>{
+    const isExpiring = v.nextDate && v.nextDate <= new Date(Date.now()+30*24*60*60*1000).toISOString().split('T')[0];
+    const isExpired = v.nextDate && v.nextDate < today;
+    const statusColor = isExpired?'#E24B4A':isExpiring?'#E65100':'#1D9E75';
+    const statusText = isExpired?'기간 만료':isExpiring?'갱신 필요':'정상';
+    return `
+    <div style="background:var(--white);border-radius:16px;padding:14px 16px;box-shadow:var(--shadow-sm);display:flex;align-items:center;gap:12px;cursor:pointer" onclick="openVaccineViewer(${i})">
+      <div style="width:52px;height:52px;border-radius:12px;overflow:hidden;background:var(--cream);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:24px">
+        ${v.photo?`<img src="${v.photo}" style="width:100%;height:100%;object-fit:cover">`:'💉'}
+      </div>
+      <div style="flex:1">
+        <div style="font-size:15px;font-weight:700;color:var(--brown)">${v.type}</div>
+        <div style="font-size:12px;color:var(--gray);margin-top:2px">접종일: ${v.date||'-'}</div>
+        ${v.nextDate?`<div style="font-size:11px;margin-top:2px;color:${statusColor};font-weight:600">다음 접종: ${v.nextDate} · ${statusText}</div>`:''}
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+        <span style="font-size:10px;font-weight:700;padding:3px 8px;border-radius:10px;background:${isExpired?'#FCEBEB':isExpiring?'#FFF3E0':'var(--teal-lt)'};color:${statusColor}">${statusText}</span>
+        <button onclick="event.stopPropagation();deleteVaccine(${i})" style="background:none;border:none;font-size:14px;cursor:pointer;color:var(--gray)">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function showVaccineAddModal() {
+  currentVaccineType=''; currentVaccinePhoto='';
+  document.querySelectorAll('#vaccineTypeGrid .size-btn').forEach(b=>b.classList.remove('selected'));
+  document.getElementById('vaccineDate').value='';
+  document.getElementById('vaccineNextDate').value='';
+  document.getElementById('vaccineTypeDirect').style.display='none';
+  document.getElementById('vaccineTypeDirect').value='';
+  document.getElementById('vaccinePhotoPlaceholder').style.display='flex';
+  const prev = document.getElementById('vaccinePhotoPreview');
+  prev.querySelectorAll('img').forEach(i=>i.remove());
+  document.getElementById('vaccineModal').classList.add('show');
+}
+function closeVaccineModal(e) {
+  if(!e||e.target===document.getElementById('vaccineModal'))
+    document.getElementById('vaccineModal').classList.remove('show');
+}
+function selectVaccineType(el, type) {
+  document.querySelectorAll('#vaccineTypeGrid .size-btn').forEach(b=>b.classList.remove('selected'));
+  el.classList.add('selected');
+  currentVaccineType = type;
+  document.getElementById('vaccineTypeDirect').style.display = type==='기타'?'block':'none';
+}
+function handleVaccinePhoto(input) {
+  const file=input.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const img=new Image();
+    img.onload=()=>{
+      const canvas=document.createElement('canvas');
+      const max=800; let w=img.width,h=img.height;
+      if(w>h){if(w>max){h=Math.round(h*max/w);w=max;}}
+      else{if(h>max){w=Math.round(w*max/h);h=max;}}
+      canvas.width=w;canvas.height=h;
+      canvas.getContext('2d').drawImage(img,0,0,w,h);
+      const src=canvas.toDataURL('image/jpeg',0.85);
+      currentVaccinePhoto=src;
+      const prev=document.getElementById('vaccinePhotoPreview');
+      document.getElementById('vaccinePhotoPlaceholder').style.display='none';
+      const existing=prev.querySelector('img');
+      if(existing) existing.src=src;
+      else {
+        const im=document.createElement('img');
+        im.src=src; im.style.cssText='width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0';
+        prev.appendChild(im);
+      }
+    };
+    img.src=e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+function saveVaccine() {
+  const type = currentVaccineType==='기타'
+    ? document.getElementById('vaccineTypeDirect').value.trim()||'기타'
+    : currentVaccineType;
+  if(!type){ showToast('접종 종류를 선택해주세요'); return; }
+  const date = document.getElementById('vaccineDate').value;
+  const nextDate = document.getElementById('vaccineNextDate').value;
+  const vaccines = getVaccines();
+  vaccines.unshift({ type, date, nextDate, photo: currentVaccinePhoto, createdAt: new Date().toISOString() });
+  saveVaccines(vaccines);
+  document.getElementById('vaccineModal').classList.remove('show');
+  renderVaccineList();
+  showToast(`✅ ${type} 접종이 등록됐어요!`);
+}
+function deleteVaccine(i) {
+  const vaccines = getVaccines();
+  vaccines.splice(i,1);
+  saveVaccines(vaccines);
+  renderVaccineList();
+  showToast('삭제됐어요');
+}
+function openVaccineViewer(i) {
+  const v = getVaccines()[i];
+  if(!v) return;
+  const viewer = document.getElementById('vaccineViewer');
+  document.getElementById('vaccineViewerTitle').textContent = `💉 ${v.type}`;
+  document.getElementById('vaccineViewerImg').src = v.photo||'';
+  document.getElementById('vaccineViewerImg').style.display = v.photo?'block':'none';
+  document.getElementById('vaccineViewerInfo').innerHTML = `
+    접종일: ${v.date||'-'}<br>
+    다음 접종일: ${v.nextDate||'-'}
+  `;
+  viewer.style.display='flex';
+  // QR 데이터 저장
+  viewer._vaccineIndex = i;
+}
+function closeVaccineViewer() {
+  document.getElementById('vaccineViewer').style.display='none';
+}
+function quickShowVaccine() {
+  const vaccines = getVaccines();
+  if(!vaccines.length){
+    showToast('아직 등록된 접종 문서가 없어요 💉');
+    return;
+  }
+  // 사진 있는 접종 중 가장 최근 것 우선, 없으면 첫 번째
+  const idx = vaccines.findIndex(v=>v.photo) >= 0 ? vaccines.findIndex(v=>v.photo) : 0;
+  openVaccineViewer(idx);
+}
+  const i = document.getElementById('vaccineViewer')._vaccineIndex;
+  const v = getVaccines()[i];
+  if(!v) return;
+  const p = loadProfile()||{name:'강아지'};
+  const text = `[댕댕로드 예방접종 수첩]\n강아지: ${p.name}\n접종: ${v.type}\n접종일: ${v.date||'-'}\n다음접종: ${v.nextDate||'-'}`;
+  if(navigator.share){
+    navigator.share({ title:`${p.name} 예방접종 수첩`, text });
+  } else {
+    navigator.clipboard?.writeText(text).then(()=>showToast('클립보드에 복사됐어요 📋'));
+  }
 }
 
 // ── 코스 저장/삭제 ──
