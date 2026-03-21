@@ -4,6 +4,45 @@ const cors = require('cors');
 const axios = require('axios');
 const path = require('path');
 const fs = require('fs');
+const mongoose = require('mongoose');
+
+// ── MongoDB 연결 ──
+const MONGODB_URI = process.env.MONGODB_URI;
+if (MONGODB_URI) {
+  mongoose.connect(MONGODB_URI)
+    .then(() => console.log('✅ MongoDB 연결 성공!'))
+    .catch(e => console.error('❌ MongoDB 연결 실패:', e.message));
+} else {
+  console.log('⚠️ MONGODB_URI 없음 - 파일 저장 모드로 동작');
+}
+
+// ── 유저 스키마 ──
+const userSchema = new mongoose.Schema({
+  kakaoId:  { type: String, required: true, unique: true },
+  nickname: String,
+  profileImage: String,
+  dogName:  String,
+  dogBreed: String,
+  dogSize:  String,
+  dogPhoto: String,
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now }
+});
+const User = mongoose.models.User || mongoose.model('User', userSchema);
+
+// ── 후기 스키마 ──
+const reviewSchema = new mongoose.Schema({
+  placeId:   { type: String, required: true, index: true },
+  placeName: String,
+  kakaoId:   String,
+  dogName:   String,
+  dogBreed:  String,
+  stars:     Number,
+  text:      String,
+  date:      String,
+  createdAt: { type: Date, default: Date.now }
+});
+const Review = mongoose.models.Review || mongoose.model('Review', reviewSchema);
 
 const app = express();
 app.use(cors({
@@ -820,41 +859,6 @@ function saveReviews(data) {
   fs.writeFileSync(REVIEWS_FILE, JSON.stringify(data, null, 2), 'utf-8');
 }
 
-// ── 후기 조회 ──
-app.get('/api/reviews/:placeId', (req, res) => {
-  const reviews = loadReviews();
-  const placeId = decodeURIComponent(req.params.placeId);
-  const placeReviews = reviews[placeId] || [];
-  const avg = placeReviews.length
-    ? (placeReviews.reduce((s, r) => s + r.stars, 0) / placeReviews.length).toFixed(1)
-    : null;
-  res.json({ reviews: placeReviews, avg, count: placeReviews.length });
-});
-
-// ── 후기 작성 ──
-app.post('/api/reviews', (req, res) => {
-  const { placeId, placeName, dogName, dogBreed, stars, text } = req.body;
-  if (!placeId || !text || !stars) return res.status(400).json({ error: '필수 항목 누락' });
-  const reviews = loadReviews();
-  if (!reviews[placeId]) reviews[placeId] = [];
-  const review = {
-    id: Date.now(),
-    placeName,
-    dogName: dogName || '익명',
-    dogBreed: dogBreed || '',
-    stars: parseInt(stars),
-    text,
-    date: new Date().toLocaleDateString('ko-KR'),
-    createdAt: new Date().toISOString()
-  };
-  reviews[placeId].unshift(review);
-  // 장소당 최대 100개
-  if (reviews[placeId].length > 100) reviews[placeId] = reviews[placeId].slice(0, 100);
-  saveReviews(reviews);
-  console.log(`후기 저장: ${placeName} - ${dogName} (★${stars})`);
-  res.json({ success: true, review });
-});
-
 // ── 장소 이미지 검색 (네이버) ──
 const placeImgCache = {};
 app.get('/api/place-image', async (req, res) => {
@@ -960,6 +964,134 @@ app.get('/api/weather', async (req, res) => {
     console.error('날씨 API 오류:', e.message);
     res.status(500).json({ error: '날씨 정보를 가져올 수 없어요' });
   }
+});
+
+// ── 카카오 로그인 ──
+const KAKAO_REDIRECT_URI = 'https://daengdaengroad-production.up.railway.app/auth/kakao/callback';
+
+// 1. 카카오 인증 페이지로 리다이렉트
+app.get('/auth/kakao', (req, res) => {
+  const kakaoAuthUrl = `https://kauth.kakao.com/oauth/authorize?client_id=${KAKAO_REST_KEY}&redirect_uri=${encodeURIComponent(KAKAO_REDIRECT_URI)}&response_type=code`;
+  res.redirect(kakaoAuthUrl);
+});
+
+// 2. 카카오 콜백 - 토큰 교환 & 유저 저장
+app.get('/auth/kakao/callback', async (req, res) => {
+  const { code } = req.query;
+  if (!code) return res.redirect('/?error=no_code');
+
+  try {
+    // 토큰 교환
+    const tokenRes = await axios.post('https://kauth.kakao.com/oauth/token', null, {
+      params: {
+        grant_type: 'authorization_code',
+        client_id: KAKAO_REST_KEY,
+        redirect_uri: KAKAO_REDIRECT_URI,
+        code
+      },
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+    });
+    const accessToken = tokenRes.data.access_token;
+
+    // 유저 정보 가져오기
+    const userRes = await axios.get('https://kapi.kakao.com/v2/user/me', {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+    const kakaoUser = userRes.data;
+    const kakaoId = String(kakaoUser.id);
+    const nickname = kakaoUser.kakao_account?.profile?.nickname || '댕댕이 집사';
+    const profileImage = kakaoUser.kakao_account?.profile?.profile_image_url || '';
+
+    // MongoDB에 유저 저장 (없으면 생성, 있으면 업데이트)
+    let user = null;
+    if (mongoose.connection.readyState === 1) {
+      user = await User.findOneAndUpdate(
+        { kakaoId },
+        { kakaoId, nickname, profileImage, updatedAt: new Date() },
+        { upsert: true, new: true }
+      );
+      console.log(`카카오 로그인: ${nickname} (${kakaoId})`);
+    }
+
+    // 클라이언트로 유저 정보 전달 (쿼리스트링으로)
+    const userInfo = encodeURIComponent(JSON.stringify({
+      kakaoId,
+      nickname,
+      profileImage,
+      dogName: user?.dogName || '',
+      dogBreed: user?.dogBreed || '',
+      dogSize: user?.dogSize || 'small',
+      dogPhoto: user?.dogPhoto || ''
+    }));
+    res.redirect(`/?login=success&user=${userInfo}`);
+
+  } catch (e) {
+    console.error('카카오 로그인 오류:', e.message);
+    res.redirect('/?error=login_failed');
+  }
+});
+
+// 3. 유저 프로필 저장 (강아지 정보)
+app.post('/api/user/profile', async (req, res) => {
+  const { kakaoId, dogName, dogBreed, dogSize, dogPhoto } = req.body;
+  if (!kakaoId) return res.status(400).json({ error: 'kakaoId 필요' });
+  try {
+    if (mongoose.connection.readyState === 1) {
+      await User.findOneAndUpdate(
+        { kakaoId },
+        { dogName, dogBreed, dogSize, dogPhoto, updatedAt: new Date() }
+      );
+    }
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ── 후기 조회 ──
+app.get('/api/reviews/:placeId', async (req, res) => {
+  const placeId = decodeURIComponent(req.params.placeId);
+  try {
+    if (mongoose.connection.readyState === 1) {
+      const placeReviews = await Review.find({ placeId }).sort({ createdAt: -1 }).limit(100).lean();
+      const avg = placeReviews.length
+        ? (placeReviews.reduce((s, r) => s + r.stars, 0) / placeReviews.length).toFixed(1)
+        : null;
+      return res.json({ reviews: placeReviews, avg, count: placeReviews.length });
+    }
+  } catch(e) { console.error('MongoDB 후기 조회 오류:', e.message); }
+  const reviews = loadReviews();
+  const placeReviews = reviews[placeId] || [];
+  const avg = placeReviews.length
+    ? (placeReviews.reduce((s, r) => s + r.stars, 0) / placeReviews.length).toFixed(1)
+    : null;
+  res.json({ reviews: placeReviews, avg, count: placeReviews.length });
+});
+
+// ── 후기 작성 ──
+app.post('/api/reviews', async (req, res) => {
+  const { placeId, placeName, kakaoId, dogName, dogBreed, stars, text } = req.body;
+  if (!placeId || !text || !stars) return res.status(400).json({ error: '필수 항목 누락' });
+  const reviewData = {
+    placeId, placeName, kakaoId: kakaoId || '',
+    dogName: dogName || '익명', dogBreed: dogBreed || '',
+    stars: parseInt(stars), text,
+    date: new Date().toLocaleDateString('ko-KR'),
+  };
+  try {
+    if (mongoose.connection.readyState === 1) {
+      const review = await Review.create(reviewData);
+      console.log(`후기 저장(MongoDB): ${placeName} - ${dogName} (★${stars})`);
+      return res.json({ success: true, review });
+    }
+  } catch(e) { console.error('MongoDB 후기 저장 오류:', e.message); }
+  const reviews = loadReviews();
+  if (!reviews[placeId]) reviews[placeId] = [];
+  const review = { id: Date.now(), ...reviewData, createdAt: new Date().toISOString() };
+  reviews[placeId].unshift(review);
+  if (reviews[placeId].length > 100) reviews[placeId] = reviews[placeId].slice(0, 100);
+  saveReviews(reviews);
+  res.json({ success: true, review });
 });
 
 // ── 헬스체크 ──
