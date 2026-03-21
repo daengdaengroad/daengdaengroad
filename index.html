@@ -729,14 +729,20 @@ function closePhotoViewer(){document.getElementById('photoViewer').classList.rem
 function getLocation(){
   const main=document.getElementById('locationMain'),sub=document.getElementById('locationSub');
   const dot=document.getElementById('locationDot'),btn=document.getElementById('refreshBtn');
-  main.value='위치 확인 중...';sub.textContent='GPS로 현재 위치를 가져오는 중';
+  // 수동 입력 중이면 GPS로 덮어쓰지 않음
+  const isManual = main.dataset.manual === 'true';
+  if(!isManual) { main.value='위치 확인 중...';sub.textContent='GPS로 현재 위치를 가져오는 중'; }
   dot.style.background='var(--amber-mid)';btn.style.animation='spin 1s linear infinite';
   if(!('geolocation' in navigator)){
-    main.value='대구 남구';sub.textContent='GPS 없음 · 직접 입력하세요';
+    if(!isManual) { main.value='대구 남구';sub.textContent='GPS 없음 · 직접 입력하세요'; }
     dot.style.background='var(--gray)';btn.style.animation='';return;
   }
   navigator.geolocation.getCurrentPosition(async pos=>{
     const{latitude:lat,longitude:lng}=pos.coords;
+    // 수동 입력 중이면 좌표만 업데이트하고 UI는 건드리지 않음
+    if(main.dataset.manual === 'true') {
+      dot.style.background='var(--teal)';btn.style.animation='';return;
+    }
     currentLat=lat;currentLng=lng;
     try{
       const res=await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=ko`);
@@ -749,12 +755,20 @@ function getLocation(){
     dot.style.background='var(--teal)';btn.style.animation='';
     document.getElementById('locationBox').classList.add('active');
   },()=>{
-    main.value='대구 남구';sub.textContent='위치 권한 없음 · 직접 입력 가능';
+    if(!isManual) { main.value='대구 남구';sub.textContent='위치 권한 없음 · 직접 입력 가능'; }
     dot.style.background='var(--gray)';btn.style.animation='';
   },{timeout:8000,enableHighAccuracy:true});
 }
-function refreshLocation(e){if(e)e.stopPropagation();getLocation();}
+function refreshLocation(e){
+  if(e)e.stopPropagation();
+  // 새로고침 버튼은 수동 입력 초기화하고 GPS로 다시 잡음
+  const main=document.getElementById('locationMain');
+  main.dataset.manual='false';
+  document.getElementById('locationSub').textContent='';
+  getLocation();
+}
 async function onManualInput(input){
+  input.dataset.manual = 'true'; // 수동 입력 플래그
   const val = input.value.trim();
   if(!val) return;
   // 카카오 주소 검색으로 좌표 변환
@@ -1086,7 +1100,7 @@ function renderSaved() {
     <div style="margin:10px 16px 0;display:grid;grid-template-columns:1fr 1fr;gap:8px" id="savedInfoBannerRow">
       <div id="savedVerifiedBanner" style="background:var(--teal-lt);border:1px solid var(--teal);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:8px">
         <div class="verified-dot" style="flex-shrink:0"></div>
-        <span style="font-size:12px;font-weight:600;color:var(--teal);line-height:1.6">저장한 코스<br>현재위치 기준</span>
+        <span style="font-size:12px;font-weight:600;color:var(--teal);line-height:1.6">저장한 코스<br>1시간 후 날씨 기준</span>
       </div>
       <div id="savedWeatherBadge" style="background:var(--teal-lt);border:1px solid var(--teal);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:10px">
         <div style="font-size:28px;line-height:1" id="savedWeatherIcon">🌡️</div>
@@ -1139,8 +1153,8 @@ function renderSaved() {
     </div>
   `}).join('');
 
-  // 날씨 로드
-  setTimeout(() => loadWeatherForSaved(saved), 200);
+  // 날씨 로드 - 저장 코스는 항상 1시간 후 기준
+  setTimeout(() => loadWeatherForSaved(), 200);
 
   // 이미지 로드
   setTimeout(async () => {
@@ -1180,7 +1194,7 @@ function calcDriveTimeClient(d) {
   return h>0?`${h}시간 ${m}분`:`${m}분`;
 }
 
-async function loadWeatherForSaved(courses) {
+async function loadWeatherForSaved() {
   const badge = document.getElementById('savedWeatherBadge');
   const iconEl = document.getElementById('savedWeatherIcon');
   const timeEl = document.getElementById('savedWeatherTime');
@@ -1188,8 +1202,8 @@ async function loadWeatherForSaved(courses) {
   const verifiedBanner = document.getElementById('savedVerifiedBanner');
   if (!currentLat || !currentLng) { if(badge) badge.style.display='none'; return; }
   try {
-    const driveMin = courses[0]?.driveMin || 30;
-    const res = await fetch(`${SERVER}/api/weather?lat=${currentLat}&lng=${currentLng}&driveMin=${driveMin}`);
+    // 저장 코스는 항상 1시간 후 기준 고정
+    const res = await fetch(`${SERVER}/api/weather?lat=${currentLat}&lng=${currentLng}&driveMin=60`);
     if (!res.ok) throw new Error('날씨 오류');
     const w = await res.json();
     if (!badge || !w.arrival) return;
@@ -1201,7 +1215,7 @@ async function loadWeatherForSaved(courses) {
     badge.style.background = bgColor; badge.style.borderColor = borderColor;
     iconEl.textContent = w.arrival.icon;
     timeEl.style.color = titleColor;
-    timeEl.textContent = `${w.arrival.timeLabel} 도착${isBad?' · 주의':''}`;
+    timeEl.textContent = `1시간 후 · ${w.arrival.label}${isBad?' ⚠️':''}`;
     tempEl.style.color = tempColor;
     tempEl.textContent = `${w.arrival.temp}°`;
     verifiedBanner.style.background = bgColor; verifiedBanner.style.borderColor = borderColor;
