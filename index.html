@@ -1080,8 +1080,35 @@ function renderSaved() {
     container.innerHTML=`<div class="saved-empty"><div class="empty-icon">&#x1F497;</div><p>아직 저장한 코스가 없어요</p><span>마음에 드는 코스를 저장해보세요</span></div>`;
     return;
   }
+
+  // 날씨 배너 추가 (결과 페이지와 동일)
+  const weatherHtml = `
+    <div style="margin:10px 16px 0;display:grid;grid-template-columns:1fr 1fr;gap:8px" id="savedInfoBannerRow">
+      <div id="savedVerifiedBanner" style="background:var(--teal-lt);border:1px solid var(--teal);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:8px">
+        <div class="verified-dot" style="flex-shrink:0"></div>
+        <span style="font-size:12px;font-weight:600;color:var(--teal);line-height:1.6">저장한 코스<br>현재위치 기준</span>
+      </div>
+      <div id="savedWeatherBadge" style="background:var(--teal-lt);border:1px solid var(--teal);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:10px">
+        <div style="font-size:28px;line-height:1" id="savedWeatherIcon">🌡️</div>
+        <div>
+          <div style="font-size:12px;font-weight:600;color:var(--teal)" id="savedWeatherTime">날씨 확인 중</div>
+          <div style="font-size:18px;font-weight:700;color:var(--teal);line-height:1.2" id="savedWeatherTemp"></div>
+        </div>
+      </div>
+    </div>`;
+
   const chipClass = 'park';
-  container.innerHTML = saved.map((c,i)=>`
+  container.innerHTML = weatherHtml + saved.map((c,i) => {
+    // 현재 위치 기준 거리/시간 재계산
+    const firstPlace = c.places?.[0];
+    let dist = c.totalDistance || '';
+    let driveTime = c.driveTime || c.estimatedTime || '';
+    if (firstPlace?.lat && firstPlace?.lng && currentLat && currentLng) {
+      const d = calcDistClient(currentLat, currentLng, firstPlace.lat, firstPlace.lng);
+      dist = d.toFixed(1);
+      driveTime = calcDriveTimeClient(d);
+    }
+    return `
     <div class="course-card" onclick="showDetailFromSaved(${i})" style="margin-top:${i===0?'12px':'0'}">
       <div id="saved-thumb-${i}" style="width:100%;height:160px;overflow:hidden;flex-shrink:0;position:relative;background:linear-gradient(135deg,var(--amber-lt),var(--cream))">
         <div style="position:absolute;bottom:0;left:0;right:0;height:60px;background:linear-gradient(transparent,rgba(65,36,2,0.3))"></div>
@@ -1096,20 +1123,26 @@ function renderSaved() {
             <div class="course-area"><span class="course-area-badge">&#x1F4C5; ${c.savedAt}</span></div>
           </div>
           <div style="text-align:center;padding-left:12px;flex-shrink:0">
-            <div class="course-time-big">${c.driveTime||c.estimatedTime||''}</div>
+            <div class="course-time-big">${driveTime}</div>
             <div class="course-time-label">드라이브</div>
           </div>
         </div>
         <div class="course-meta">
-          <div class="course-meta-item"><div class="val">&#x1F697; ${c.totalDistance||''}km</div><div class="lbl">이동거리</div></div>
+          <div class="course-meta-item"><div class="val">&#x1F697; ${driveTime}</div><div class="lbl">드라이브</div></div>
+          <div class="course-divider"></div>
+          <div class="course-meta-item"><div class="val">&#x1F4CD; ${dist}km</div><div class="lbl">거리</div></div>
           <div class="course-divider"></div>
           <div class="course-meta-item"><div class="val">&#x1F43E; ${c.places?.length||0}곳</div><div class="lbl">방문 장소</div></div>
         </div>
       </div>
       <div class="course-places">${(c.places||[]).map(p=>`<span class="place-chip ${chipClass}">&#x2605; ${p.name}</span>`).join('')}</div>
     </div>
-  `).join('');
-  // 저장된 코스 이미지 로드
+  `}).join('');
+
+  // 날씨 로드
+  setTimeout(() => loadWeatherForSaved(saved), 200);
+
+  // 이미지 로드
   setTimeout(async () => {
     const sleep = ms => new Promise(r => setTimeout(r, ms));
     for (let i = 0; i < saved.length; i++) {
@@ -1129,6 +1162,54 @@ function renderSaved() {
       await sleep(400);
     }
   }, 100);
+}
+
+// 클라이언트 거리 계산
+function calcDistClient(lat1, lng1, lat2, lng2) {
+  const R = 6371;
+  const dLat = (lat2-lat1)*Math.PI/180;
+  const dLng = (lng2-lng1)*Math.PI/180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+function calcDriveTimeClient(d) {
+  if(!d) return '';
+  const speed = d<=10?30:d<=30?50:70;
+  const min = Math.round((d/speed)*60)+20;
+  const h = Math.floor(min/60), m = min%60;
+  return h>0?`${h}시간 ${m}분`:`${m}분`;
+}
+
+async function loadWeatherForSaved(courses) {
+  const badge = document.getElementById('savedWeatherBadge');
+  const iconEl = document.getElementById('savedWeatherIcon');
+  const timeEl = document.getElementById('savedWeatherTime');
+  const tempEl = document.getElementById('savedWeatherTemp');
+  const verifiedBanner = document.getElementById('savedVerifiedBanner');
+  if (!currentLat || !currentLng) { if(badge) badge.style.display='none'; return; }
+  try {
+    const driveMin = courses[0]?.driveMin || 30;
+    const res = await fetch(`${SERVER}/api/weather?lat=${currentLat}&lng=${currentLng}&driveMin=${driveMin}`);
+    if (!res.ok) throw new Error('날씨 오류');
+    const w = await res.json();
+    if (!badge || !w.arrival) return;
+    const isBad = w.arrival.bad;
+    const bgColor = isBad ? '#FCEBEB' : '#E0F5EE';
+    const borderColor = isBad ? '#F7C1C1' : '#9FE1CB';
+    const titleColor = isBad ? '#501313' : '#085041';
+    const tempColor = isBad ? '#A32D2D' : '#0F6E56';
+    badge.style.background = bgColor; badge.style.borderColor = borderColor;
+    iconEl.textContent = w.arrival.icon;
+    timeEl.style.color = titleColor;
+    timeEl.textContent = `${w.arrival.timeLabel} 도착${isBad?' · 주의':''}`;
+    tempEl.style.color = tempColor;
+    tempEl.textContent = `${w.arrival.temp}°`;
+    verifiedBanner.style.background = bgColor; verifiedBanner.style.borderColor = borderColor;
+    const dot = verifiedBanner.querySelector('.verified-dot');
+    const text = verifiedBanner.querySelector('span');
+    if(dot) dot.style.background = isBad?'#E24B4A':'var(--teal)';
+    if(text) text.style.color = isBad?'#501313':'var(--teal)';
+  } catch(e) { if(badge) badge.style.display='none'; }
 }
 
 function showDetailFromSaved(idx) {
