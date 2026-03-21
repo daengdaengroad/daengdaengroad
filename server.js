@@ -939,10 +939,11 @@ app.get('/api/weather', async (req, res) => {
     const currentWeather = classifyWeather(current.weather[0].id);
     const arrivalWeather = classifyWeather(arrivalForecast.weather[0].id);
 
-    // 도착 시간 문자열
+    // 도착 시간 문자열 - 한국 시간(UTC+9) 기준
     const arrivalTime = new Date(Date.now() + driveMin * 60 * 1000);
-    const arrivalHour = arrivalTime.getHours();
-    const arrivalLabel = `${arrivalHour}시경`;
+    const arrivalHour = (arrivalTime.getUTCHours() + 9) % 24;
+    const arrivalMin = arrivalTime.getUTCMinutes();
+    const arrivalLabel = arrivalMin >= 30 ? `${arrivalHour}시 30분경` : `${arrivalHour}시경`;
 
     res.json({
       current: {
