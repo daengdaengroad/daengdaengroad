@@ -197,10 +197,10 @@ body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(145deg,#E8
 .star-btn.on{opacity:1}
 /* 하단 탭 */
 .bottom-tab{position:absolute;bottom:0;left:0;right:0;background:rgba(255,253,248,.95);border-top:1px solid rgba(221,217,207,.6);display:flex;z-index:50;backdrop-filter:blur(12px);padding-bottom:env(safe-area-inset-bottom,0px)}
-.tab-item{flex:1;display:flex;flex-direction:column;align-items:center;padding:10px 0 14px;cursor:pointer;gap:3px;transition:transform .2s}
+.tab-item{flex:1;display:flex;flex-direction:column;align-items:center;padding:12px 0 16px;cursor:pointer;gap:4px;transition:transform .2s}
 .tab-item:active{transform:scale(.92)}
-.tab-icon{font-size:22px}
-.tab-label{font-size:10px;color:var(--gray);font-weight:500;letter-spacing:.2px}
+.tab-icon{font-size:26px}
+.tab-label{font-size:11px;color:var(--gray);font-weight:500;letter-spacing:.2px}
 .tab-item.active .tab-label{color:var(--amber);font-weight:700}
 .law-banner{margin:4px 20px;background:linear-gradient(135deg,#1D9E75,#167a5a);border-radius:var(--radius);padding:12px 16px;cursor:pointer;position:relative;overflow:hidden}
 .law-banner::before{content:'';position:absolute;top:-10px;right:-10px;width:80px;height:80px;background:rgba(255,255,255,.08);border-radius:50%}
@@ -506,15 +506,15 @@ body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(145deg,#E8
 <!-- 하단 탭 -->
 <div class="bottom-tab" id="bottomTab" style="display:none">
   <div class="tab-item active" id="tab-home" onclick="switchTab('main')">
-    <img src="https://daengdaengroad-production.up.railway.app/public/home.png" style="width:28px;height:28px;object-fit:contain;border-radius:6px">
+    <img src="https://daengdaengroad-production.up.railway.app/public/home.png" style="width:36px;height:36px;object-fit:contain;border-radius:8px">
     <div class="tab-label">홈</div>
   </div>
   <div class="tab-item" id="tab-saved" onclick="switchTab('saved')">
-    <img src="https://daengdaengroad-production.up.railway.app/public/heart.png" style="width:28px;height:28px;object-fit:contain;border-radius:6px">
+    <img src="https://daengdaengroad-production.up.railway.app/public/heart.png" style="width:36px;height:36px;object-fit:contain;border-radius:8px">
     <div class="tab-label">저장</div>
   </div>
   <div class="tab-item" id="tab-profile" onclick="openEditModal()">
-    <img src="https://daengdaengroad-production.up.railway.app/public/mydog.png" style="width:28px;height:28px;object-fit:contain;border-radius:6px">
+    <img src="https://daengdaengroad-production.up.railway.app/public/mydog.png" style="width:36px;height:36px;object-fit:contain;border-radius:8px">
     <div class="tab-label">내 강아지</div>
   </div>
 </div>
