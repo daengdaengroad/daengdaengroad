@@ -624,15 +624,12 @@ body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(145deg,#E8
 
 <!-- 접종 전체화면 뷰어 -->
 <div id="vaccineViewer" style="display:none;position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.95);z-index:600;flex-direction:column;align-items:center;justify-content:center">
-  <div style="position:absolute;top:0;left:0;right:0;padding:16px 20px;display:flex;justify-content:space-between;align-items:center">
+  <div style="position:absolute;top:0;left:0;right:0;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;z-index:1">
     <div id="vaccineViewerTitle" style="color:#fff;font-size:16px;font-weight:700;font-family:'Noto Sans KR',sans-serif"></div>
     <button onclick="closeVaccineViewer()" style="background:rgba(255,255,255,.2);border:none;color:#fff;font-size:18px;width:36px;height:36px;border-radius:50%;cursor:pointer">✕</button>
   </div>
-  <img id="vaccineViewerImg" style="max-width:100%;max-height:75%;object-fit:contain;border-radius:8px;padding:0 16px">
-  <div id="vaccineViewerInfo" style="color:rgba(255,255,255,.8);font-size:13px;margin-top:16px;text-align:center;line-height:1.8;padding:0 20px"></div>
-  <div style="display:flex;gap:12px;margin-top:20px">
-    <button id="vaccineShareBtn" onclick="shareVaccineQR()" style="background:var(--amber);border:none;border-radius:20px;padding:10px 20px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;font-family:'Noto Sans KR',sans-serif">QR 공유 📲</button>
-  </div>
+  <img id="vaccineViewerImg" style="width:100%;height:100%;object-fit:contain;padding:60px 0 80px">
+  <div id="vaccineViewerInfo" style="position:absolute;bottom:0;left:0;right:0;color:rgba(255,255,255,.8);font-size:13px;text-align:center;line-height:1.8;padding:16px 20px;background:linear-gradient(transparent,rgba(0,0,0,.6))"></div>
 </div>
 
 
