@@ -1182,6 +1182,7 @@ function renderMyDog() {
 // ── 예방접종 관련 ──
 let currentVaccineType = '';
 let currentVaccinePhoto = '';
+let editingVaccineIndex = -1; // -1이면 추가, 0 이상이면 수정
 
 function getVaccines() { return JSON.parse(localStorage.getItem('daengdaeng_vaccines')||'[]'); }
 function saveVaccines(v) { localStorage.setItem('daengdaeng_vaccines', JSON.stringify(v)); }
@@ -1211,14 +1212,19 @@ function renderVaccineList() {
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
         <span style="font-size:10px;font-weight:700;padding:3px 8px;border-radius:10px;background:${isExpired?'#FCEBEB':isExpiring?'#FFF3E0':'var(--teal-lt)'};color:${statusColor}">${statusText}</span>
-        <button onclick="event.stopPropagation();deleteVaccine(${i})" style="background:none;border:none;font-size:14px;cursor:pointer;color:var(--gray)">🗑️</button>
+        <div style="display:flex;gap:6px">
+          <button onclick="event.stopPropagation();editVaccine(${i})" style="background:none;border:none;font-size:14px;cursor:pointer;color:var(--amber)">✏️</button>
+          <button onclick="event.stopPropagation();deleteVaccine(${i})" style="background:none;border:none;font-size:14px;cursor:pointer;color:var(--gray)">🗑️</button>
+        </div>
       </div>
     </div>`;
   }).join('');
 }
 
 function showVaccineAddModal() {
+  editingVaccineIndex = -1;
   currentVaccineType=''; currentVaccinePhoto='';
+  document.querySelector('#vaccineModal .modal-title').textContent='예방접종 등록';
   document.querySelectorAll('#vaccineTypeGrid .size-btn').forEach(b=>b.classList.remove('selected'));
   document.getElementById('vaccineDate').value='';
   document.getElementById('vaccineNextDate').value='';
@@ -1227,6 +1233,45 @@ function showVaccineAddModal() {
   document.getElementById('vaccinePhotoPlaceholder').style.display='flex';
   const prev = document.getElementById('vaccinePhotoPreview');
   prev.querySelectorAll('img').forEach(i=>i.remove());
+  document.getElementById('vaccineModal').classList.add('show');
+}
+
+function editVaccine(i) {
+  const v = getVaccines()[i];
+  if(!v) return;
+  editingVaccineIndex = i;
+  currentVaccineType = v.type;
+  currentVaccinePhoto = v.photo||'';
+  document.querySelector('#vaccineModal .modal-title').textContent='예방접종 수정';
+  // 타입 선택
+  const knownTypes = ['광견병','DHPPL','켄넬코프','코로나','심장사상충'];
+  document.querySelectorAll('#vaccineTypeGrid .size-btn').forEach(b=>b.classList.remove('selected'));
+  if(knownTypes.includes(v.type)){
+    document.querySelectorAll('#vaccineTypeGrid .size-btn').forEach(b=>{
+      if(b.textContent.includes(v.type)) b.classList.add('selected');
+    });
+    document.getElementById('vaccineTypeDirect').style.display='none';
+  } else {
+    document.querySelectorAll('#vaccineTypeGrid .size-btn').forEach(b=>{
+      if(b.textContent.includes('기타')) b.classList.add('selected');
+    });
+    document.getElementById('vaccineTypeDirect').style.display='block';
+    document.getElementById('vaccineTypeDirect').value=v.type;
+  }
+  // 날짜
+  document.getElementById('vaccineDate').value=v.date||'';
+  document.getElementById('vaccineNextDate').value=v.nextDate||'';
+  // 사진
+  const prev = document.getElementById('vaccinePhotoPreview');
+  prev.querySelectorAll('img').forEach(img=>img.remove());
+  if(v.photo){
+    document.getElementById('vaccinePhotoPlaceholder').style.display='none';
+    const im=document.createElement('img');
+    im.src=v.photo; im.style.cssText='width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0';
+    prev.appendChild(im);
+  } else {
+    document.getElementById('vaccinePhotoPlaceholder').style.display='flex';
+  }
   document.getElementById('vaccineModal').classList.add('show');
 }
 function closeVaccineModal(e) {
@@ -1275,11 +1320,20 @@ function saveVaccine() {
   const date = document.getElementById('vaccineDate').value;
   const nextDate = document.getElementById('vaccineNextDate').value;
   const vaccines = getVaccines();
-  vaccines.unshift({ type, date, nextDate, photo: currentVaccinePhoto, createdAt: new Date().toISOString() });
+  const vaccineData = { type, date, nextDate, photo: currentVaccinePhoto||vaccines[editingVaccineIndex]?.photo||'' };
+  if(editingVaccineIndex >= 0) {
+    // 수정 모드
+    vaccines[editingVaccineIndex] = { ...vaccines[editingVaccineIndex], ...vaccineData };
+    showToast(`✅ ${type} 접종이 수정됐어요!`);
+  } else {
+    // 추가 모드
+    vaccineData.createdAt = new Date().toISOString();
+    vaccines.unshift(vaccineData);
+    showToast(`✅ ${type} 접종이 등록됐어요!`);
+  }
   saveVaccines(vaccines);
   document.getElementById('vaccineModal').classList.remove('show');
   renderVaccineList();
-  showToast(`✅ ${type} 접종이 등록됐어요!`);
 }
 function deleteVaccine(i) {
   const vaccines = getVaccines();
