@@ -560,7 +560,6 @@ window.addEventListener('load',()=>{
     try {
       const user = JSON.parse(decodeURIComponent(params.get('user')));
       currentUser = user;
-      // 카카오 유저 정보로 프로필 구성
       const p = {
         name: user.dogName || user.nickname || '초코',
         breed: user.dogBreed || '말티즈',
@@ -572,9 +571,7 @@ window.addEventListener('load',()=>{
       };
       saveProfile(p); applyProfile(p);
       document.getElementById('bottomTab').style.display='flex';
-      // URL 정리
       window.history.replaceState({}, '', '/');
-      // 강아지 정보 없으면 강아지 입력 페이지로
       if (!user.dogName) { goPage('doginfo'); }
       else { goPage('main'); }
       showToast(`🐾 ${user.nickname}님 환영해요!`);
@@ -585,8 +582,14 @@ window.addEventListener('load',()=>{
     showToast('로그인에 실패했어요. 다시 시도해주세요.');
     window.history.replaceState({}, '', '/');
   }
-  const saved=loadProfile();
-  if(saved){applyProfile(saved);document.getElementById('bottomTab').style.display='flex';goPage('main');}
+  // 카카오 로그인한 유저만 통과 (kakaoId 없으면 로그인 화면)
+  const saved = loadProfile();
+  if (saved && saved.kakaoId) {
+    applyProfile(saved);
+    document.getElementById('bottomTab').style.display='flex';
+    goPage('main');
+  }
+  // kakaoId 없으면 로그인 페이지 유지
   getLocation();
 });
 
