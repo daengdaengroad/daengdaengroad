@@ -1315,11 +1315,11 @@ function quickShowVaccine() {
     showToast('아직 등록된 접종 문서가 없어요 💉');
     return;
   }
-  // 사진 있는 접종 중 가장 최근 것 우선, 없으면 첫 번째
   const idx = vaccines.findIndex(v=>v.photo) >= 0 ? vaccines.findIndex(v=>v.photo) : 0;
   openVaccineViewer(idx);
 }
-  const i = document.getElementById('vaccineViewer')._vaccineIndex;
+
+function shareVaccineQR() {
   const v = getVaccines()[i];
   if(!v) return;
   const p = loadProfile()||{name:'강아지'};
