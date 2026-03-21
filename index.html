@@ -391,6 +391,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(145deg,#E8
         <div class="location-auto-text" style="flex:1">
           <input type="text" id="locationMain" value="위치 확인 중..." 
             style="font-size:15px;font-weight:700;color:var(--dark);background:transparent;border:none;outline:none;width:100%;font-family:'Noto Sans KR',sans-serif;padding:0"
+            onfocus="this.dataset.manual='true';this.select()"
             oninput="onManualInput(this)" onkeydown="if(event.key==='Enter')onManualInput(this)">
           <span id="locationSub">GPS로 현재 위치를 가져오는 중</span>
         </div>
@@ -729,18 +730,15 @@ function closePhotoViewer(){document.getElementById('photoViewer').classList.rem
 function getLocation(){
   const main=document.getElementById('locationMain'),sub=document.getElementById('locationSub');
   const dot=document.getElementById('locationDot'),btn=document.getElementById('refreshBtn');
-  // 수동 입력 중이면 GPS로 덮어쓰지 않음
-  const isManual = main.dataset.manual === 'true';
-  if(!isManual) { main.value='위치 확인 중...';sub.textContent='GPS로 현재 위치를 가져오는 중'; }
   dot.style.background='var(--amber-mid)';btn.style.animation='spin 1s linear infinite';
   if(!('geolocation' in navigator)){
-    if(!isManual) { main.value='대구 남구';sub.textContent='GPS 없음 · 직접 입력하세요'; }
+    if(main.dataset.manual!=='true'){main.value='대구 남구';sub.textContent='GPS 없음 · 직접 입력하세요';}
     dot.style.background='var(--gray)';btn.style.animation='';return;
   }
   navigator.geolocation.getCurrentPosition(async pos=>{
     const{latitude:lat,longitude:lng}=pos.coords;
-    // 수동 입력 중이면 좌표만 업데이트하고 UI는 건드리지 않음
-    if(main.dataset.manual === 'true') {
+    // 포커스 중이거나 수동 입력한 경우 UI 절대 건드리지 않음
+    if(document.activeElement===main || main.dataset.manual==='true'){
       dot.style.background='var(--teal)';btn.style.animation='';return;
     }
     currentLat=lat;currentLng=lng;
@@ -750,18 +748,24 @@ function getLocation(){
       const addr=data.address;
       const loc=((addr.city||addr.county||'')+' '+(addr.suburb||addr.neighbourhood||addr.quarter||'')).trim();
       currentLocation=loc||'현재 위치';
-      main.value=currentLocation;sub.textContent=`위도 ${lat.toFixed(4)} · 경도 ${lng.toFixed(4)}`;
-    }catch{main.value='현재 위치 확인됨';sub.textContent=`GPS: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;}
+      // 응답 왔을 때도 다시 체크
+      if(document.activeElement!==main && main.dataset.manual!=='true'){
+        main.value=currentLocation;sub.textContent=`위도 ${lat.toFixed(4)} · 경도 ${lng.toFixed(4)}`;
+      }
+    }catch{
+      if(document.activeElement!==main && main.dataset.manual!=='true'){
+        main.value='현재 위치 확인됨';sub.textContent=`GPS: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+      }
+    }
     dot.style.background='var(--teal)';btn.style.animation='';
     document.getElementById('locationBox').classList.add('active');
   },()=>{
-    if(!isManual) { main.value='대구 남구';sub.textContent='위치 권한 없음 · 직접 입력 가능'; }
+    if(main.dataset.manual!=='true'){main.value='대구 남구';sub.textContent='위치 권한 없음 · 직접 입력 가능';}
     dot.style.background='var(--gray)';btn.style.animation='';
   },{timeout:8000,enableHighAccuracy:true});
 }
 function refreshLocation(e){
   if(e)e.stopPropagation();
-  // 새로고침 버튼은 수동 입력 초기화하고 GPS로 다시 잡음
   const main=document.getElementById('locationMain');
   main.dataset.manual='false';
   document.getElementById('locationSub').textContent='';
