@@ -572,8 +572,9 @@ window.addEventListener('load',()=>{
       saveProfile(p); applyProfile(p);
       document.getElementById('bottomTab').style.display='flex';
       window.history.replaceState({}, '', '/');
-      if (!user.dogName) { goPage('doginfo'); }
-      else { goPage('main'); }
+      // DB에 강아지 정보 있으면 바로 메인, 없으면 입력 페이지
+      if (user.dogName) { goPage('main'); }
+      else { goPage('doginfo'); }
       showToast(`🐾 ${user.nickname}님 환영해요!`);
       return;
     } catch(e) {}
@@ -615,12 +616,23 @@ function updateHeroBanner(src){
   else{img.style.display='none';empty.style.display='flex';if(hint)hint.style.display='block';}
 }
 
-function saveAndStart(){
+async function saveAndStart(){
   const name=document.getElementById('dogName').value.trim()||'초코';
   const breed=document.getElementById('dogBreed').value.trim()||'말티즈';
   const photo=currentPhoto||loadProfile()?.photo||null;
-  const p={name,breed,size:dogSize,photo};
+  const kakaoId=loadProfile()?.kakaoId||currentUser?.kakaoId||null;
+  const p={name,breed,size:dogSize,photo,kakaoId};
   saveProfile(p);applyProfile(p);
+  // MongoDB에도 저장
+  if(kakaoId){
+    try{
+      await fetch(`${SERVER}/api/user/profile`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({kakaoId,dogName:name,dogBreed:breed,dogSize:dogSize,dogPhoto:photo||''})
+      });
+    }catch(e){}
+  }
   document.getElementById('bottomTab').style.display='flex';
   goPage('main');
 }
