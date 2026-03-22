@@ -663,10 +663,15 @@ const SERVER = window.location.origin.includes('localhost') ? 'http://localhost:
 window.addEventListener('load',()=>{
   // 카카오 로그인 콜백 처리
   const params = new URLSearchParams(window.location.search);
-  if (params.get('login') === 'success') {
-    try {
-      const user = JSON.parse(decodeURIComponent(params.get('user')));
+if (params.get('login') === 'success') {
+  fetch(SERVER + '/api/me')
+    .then(res => res.json())
+    .then(data => {
+      const user = data.user;
+      if (!user) return;
+
       currentUser = user;
+
       const p = {
         name: user.dogName || user.nickname || '초코',
         breed: user.dogBreed || '말티즈',
@@ -676,15 +681,26 @@ window.addEventListener('load',()=>{
         nickname: user.nickname,
         profileImage: user.profileImage
       };
-      saveProfile(p); applyProfile(p);
-      document.getElementById('bottomTab').style.display='flex';
+
+      saveProfile(p);
+      applyProfile(p);
+
+      document.getElementById('bottomTab').style.display = 'flex';
       window.history.replaceState({}, '', '/');
-      // DB에 강아지 정보 있으면 바로 메인, 없으면 입력 페이지
-      if (user.dogName) { goPage('main'); }
-      else { goPage('doginfo'); }
+
+      if (user.dogName) {
+        goPage('main');
+      } else {
+        goPage('doginfo');
+      }
+
       showToast(`🐾 ${user.nickname}님 환영해요!`);
-      return;
-    } catch(e) {}
+    })
+    .catch(() => {
+      showToast('로그인 정보를 가져오지 못했어요');
+    });
+
+  return;
   }
   if (params.get('error')) {
     showToast('로그인에 실패했어요. 다시 시도해주세요.');
@@ -1824,5 +1840,28 @@ if ('serviceWorker' in navigator) {
   });
 }
 </script>
+<script>
+if (location.search.includes('login=success')) {
+  fetch('/api/me')
+    .then(res => res.json())
+    .then(data => {
+      console.log('로그인 사용자:', data.user);
+    });
+}
+</script>
 </body>
+<script>
+if (location.search.includes('login=success')) {
+  fetch('/api/me')
+    .then(res => res.json())
+    .then(data => {
+      console.log('로그인 사용자:', data.user);
+
+      // 테스트용 알림 (확인용)
+      if (data.user) {
+        alert(data.user.nickname + ' 로그인 성공!');
+      }
+    });
+}
+</script>
 </html>
