@@ -230,13 +230,13 @@ async function searchTourPlaces(lat, lng, radius, activityType, minKm=0) {
       lng: parseFloat(p.mapx),
       distance: calcDistance(lat, lng, parseFloat(p.mapy), parseFloat(p.mapx)),
       source: 'tourapi',
-      verified: '한국관광공사 반려동물 동반 공식 인증'
+      verified: '한국관광공사 반려동물 동반 공식 인증',
+      confirmedPetFriendly: true
     })).filter(p => {
-      if (!isNaN(p.lat) && !isNaN(p.lng) && p.distance <= radius/1000) {
-        const petKw = ['반려','애견','강아지','도그런','펫','공원','산책','계곡','수영','운동장','놀이터','카페'];
-        return petKw.some(k => (p.name||'').includes(k));
-      }
-      return false;
+      if (isNaN(p.lat) || isNaN(p.lng)) return false;
+      if (p.distance > radius/1000 || p.distance < minKm) return false;
+      if (isExcludedPlace(p)) return false;
+      return true;
     });
 
   } catch (e) {
@@ -350,6 +350,55 @@ function calcDistance(lat1, lng1, lat2, lng2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
+
+function normalizeText(value = '') {
+  return String(value)
+    .toLowerCase()
+    .replace(/<[^>]+>/g, '')
+    .replace(/\s+/g, '')
+    .replace(/[()\[\]\-_,./]/g, '');
+}
+
+function roundCoord(value, digits = 3) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return '';
+  return num.toFixed(digits);
+}
+
+function isExcludedPlace(place) {
+  const text = `${place.name || ''} ${place.category || ''}`;
+  const excludeWords = ['미용', '샵', '살롱', '병원', '동물병원', '약국', '호텔', '유치원', '훈련소', '용품'];
+  return excludeWords.some(word => text.includes(word));
+}
+
+function classifyConfirmedCategory(place) {
+  const text = `${place.name || ''} ${place.category || ''}`;
+  if (/(카페|cafe|커피|베이커리|디저트)/i.test(text)) return 'cafe';
+  if (/(식당|레스토랑|음식점|맛집|브런치|bar|바|펍)/i.test(text)) return 'restaurant';
+  if (/(공원|놀이터|산책|수목원|휴양림|둘레길|레포츠|운동장|광장)/i.test(text)) return 'park';
+  if (place.category === '음식점') return 'restaurant';
+  return null;
+}
+
+function deduplicatePlacesStrict(places) {
+  const seen = new Set();
+  return places.filter(place => {
+    const key = [
+      normalizeText(place.name),
+      normalizeText(place.address).slice(0, 24),
+      roundCoord(place.lat),
+      roundCoord(place.lng)
+    ].join('|');
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function isConfirmedPetPlace(place) {
+  return place.confirmedPetFriendly === true;
+}
+
 // ── 코스 생성 API ──
 app.post('/api/generate-course', async (req, res) => {
   const lat = parseFloat(req.body.lat);
@@ -383,211 +432,60 @@ app.post('/api/generate-course', async (req, res) => {
   console.log(forceRefresh ? `🔄 강제 새로고침 → Groq 호출` : `캐시 미스 → Groq 호출 (3개 생성해서 캐시 저장)`);  
 
   try {
-    // 1. 카카오맵 + 한국관광공사 API 병렬 검색
-    // 카카오는 최대 20km 제한 → 큰 반경은 중간점에서 여러번 검색
-    async function searchKakaoMultiRadius(keywords, centerLat, centerLng, maxRadius, minRadius) {
-      const results = [];
-      // 0.9도 ≈ 100km, 0.45도 ≈ 50km, 0.2도 ≈ 20km
-      const searchPoints = maxRadius <= 20000
-        ? [{ lat: centerLat, lng: centerLng }]
-        : maxRadius <= 50000
-          ? [
-              { lat: centerLat + 0.22, lng: centerLng },
-              { lat: centerLat - 0.22, lng: centerLng },
-              { lat: centerLat, lng: centerLng + 0.33 },
-              { lat: centerLat, lng: centerLng - 0.33 },
-              { lat: centerLat + 0.15, lng: centerLng + 0.22 },
-              { lat: centerLat - 0.15, lng: centerLng - 0.22 },
-            ]
-          : [
-              // 1시간 이상 / 2시간: 50~100km 범위 12방향으로 촘촘하게
-              { lat: centerLat + 0.55, lng: centerLng },
-              { lat: centerLat - 0.55, lng: centerLng },
-              { lat: centerLat, lng: centerLng + 0.75 },
-              { lat: centerLat, lng: centerLng - 0.75 },
-              { lat: centerLat + 0.4, lng: centerLng + 0.5 },
-              { lat: centerLat - 0.4, lng: centerLng + 0.5 },
-              { lat: centerLat + 0.4, lng: centerLng - 0.5 },
-              { lat: centerLat - 0.4, lng: centerLng - 0.5 },
-              { lat: centerLat + 0.7, lng: centerLng + 0.3 },
-              { lat: centerLat - 0.7, lng: centerLng - 0.3 },
-              { lat: centerLat + 0.3, lng: centerLng + 0.8 },
-              { lat: centerLat - 0.3, lng: centerLng - 0.8 },
-            ];
+    // 1. 반려동물 동반 공식 인증 데이터만 사용
+    const confirmedTourPlaces = await searchTourPlaces(lat, lng, radius, activity, minKm);
 
-      for (const point of searchPoints) {
-        for (const kw of keywords) {
-          const places = await searchKakaoPlaces(kw, point.lat, point.lng, 20000);
-          results.push(...places);
-        }
-      }
-      return results;
+    const confirmedTagged = deduplicatePlacesStrict(
+      confirmedTourPlaces
+        .map(place => ({ ...place, catTag: classifyConfirmedCategory(place) }))
+        .filter(place => isConfirmedPetPlace(place) && place.catTag && !isExcludedPlace(place))
+    );
+
+    const cafeFinal = confirmedTagged
+      .filter(place => place.catTag === 'cafe')
+      .sort((a, b) => (a.distance || 999) - (b.distance || 999))
+      .slice(0, 20);
+    const restaurantFinal = confirmedTagged
+      .filter(place => place.catTag === 'restaurant')
+      .sort((a, b) => (a.distance || 999) - (b.distance || 999))
+      .slice(0, 20);
+    const parkFinal = confirmedTagged
+      .filter(place => place.catTag === 'park')
+      .sort((a, b) => (a.distance || 999) - (b.distance || 999))
+      .slice(0, 20);
+
+    console.log(`공식 인증 장소만 사용: 전체 ${confirmedTagged.length}개 / 카페 ${cafeFinal.length}개 / 식당 ${restaurantFinal.length}개 / 공원 ${parkFinal.length}개`);
+
+    const requiredCounts = {
+      cafe: cafeFinal.length,
+      restaurant: restaurantFinal.length,
+      park: parkFinal.length
+    };
+
+    const missingCategories = [];
+    if (requiredCounts.cafe === 0) missingCategories.push('애견카페');
+    if (requiredCounts.restaurant === 0) missingCategories.push('애견식당');
+    if (requiredCounts.park === 0) missingCategories.push('애견공원');
+
+    if (missingCategories.length > 0) {
+      return res.status(404).json({
+        error: `공식적으로 반려동물 동반이 확인된 장소만 쓰도록 바꿔서, 현재 범위에서는 ${missingCategories.join(', ')} 데이터를 찾지 못했어요. 다른 거리로 넓혀보세요.`
+      });
     }
 
-    // 2시간 이상(minKm>20)이면 관광공사 제외 - 가까운 데이터만 줌
-    // 카테고리별 장소 수집
-    const cafeKeywords = ['애견카페', '반려견카페', '강아지카페', '펫카페', '도그카페'];
-    const restaurantKeywords = ['애견 식당', '반려견 식당', '반려동물 식당', '펫프렌들리 레스토랑', '애견 동반 식당'];
-    const parkKeywords = ['애견 공원', '반려견 공원', '반려견 놀이터', '애견 놀이터', '반려동물 공원'];
-
-    const [cafeKakao, restaurantKakao, parkKakao,
-           cafeNaver, restaurantNaver, parkNaver] = await Promise.all([
-      searchKakaoMultiRadius(cafeKeywords, lat, lng, radius, minKm),
-      searchKakaoMultiRadius(restaurantKeywords, lat, lng, radius, minKm),
-      searchKakaoMultiRadius(parkKeywords, lat, lng, radius, minKm),
-      Promise.all(cafeKeywords.slice(0,3).map(q => searchNaverPlaces(q, 10))).then(r => r.flat()),
-      Promise.all(restaurantKeywords.slice(0,3).map(q => searchNaverPlaces(q, 10))).then(r => r.flat()),
-      Promise.all(parkKeywords.slice(0,3).map(q => searchNaverPlaces(q, 10))).then(r => r.flat()),
-    ]);
-
-    // 카테고리별 거리 필터링 및 태그 부착
-    function filterAndTag(places, tag) {
-      return places.map(p => {
-        const pLat = parseFloat(p.lat||p.y||0);
-        const pLng = parseFloat(p.lng||p.x||0);
-        const dist = (pLat && pLng) ? calcDistance(lat, lng, pLat, pLng) : 999;
-        return { ...p, lat: pLat, lng: pLng, distance: parseFloat(dist.toFixed(2)), catTag: tag };
-      }).filter(p => p.lat && p.lng && p.distance >= minKm && p.distance <= radius/1000);
-    }
-
-    function normPlace(p, defaultSource) {
-      return {
-        ...p,
-        lat: p.lat||parseFloat(p.y||0),
-        lng: p.lng||parseFloat(p.x||0),
-        name: p.name||p.place_name||'',
-        address: p.address||p.address_name||'',
-        phone: p.phone||'',
-        url: p.url||p.place_url||'',
-        source: p.source||defaultSource,
-        reviewCount: parseInt(p.reviewCount||0),
-        rating: parseFloat(p.rating||0)
-      };
-    }
-    const cafePlaces = filterAndTag([...cafeKakao, ...cafeNaver].map(p=>normPlace(p,'kakao')), 'cafe');
-    const restaurantPlaces = filterAndTag([...restaurantKakao, ...restaurantNaver].map(p=>normPlace(p,'kakao')), 'restaurant');
-    const parkPlaces = filterAndTag([...parkKakao, ...parkNaver].map(p=>normPlace(p,'kakao')), 'park');
-
-    // 후기 평점 기반 정렬 (후기 없으면 거리순)
-    const reviewData = loadReviews();
-    function getScore(p) {
-      // 1. 앱 내부 후기 (실제 방문자) - 가중치 최대
-      const inAppReviews = reviewData[p.id] || reviewData[p.name] || [];
-      const inAppAvg = inAppReviews.length ? inAppReviews.reduce((s,x)=>s+x.stars,0)/inAppReviews.length : 0;
-      const inAppScore = inAppAvg * Math.log(inAppReviews.length + 1) * 3;
-
-      // 2. 수동 인기DB 점수 (0~100)
-      const popularScore = getPopularScore(p.name) * 0.5;
-
-      // 3. 후기 없고 인기DB도 없으면 거리 가까울수록 보너스
-      const distBonus = (inAppReviews.length === 0 && popularScore === 0)
-        ? Math.max(0, 10 - (p.distance||10)) * 0.15
-        : 0;
-
-      return inAppScore + popularScore + distBonus;
-    }
-    function dedupByName(arr) {
-      const seen = new Set();
-      return arr
-        .filter(p => { if(seen.has(p.name)) return false; seen.add(p.name); return true; })
-        .sort((a,b) => getScore(b) - getScore(a)); // 평점 높은 순
-    }
-    const cafeFinal = dedupByName(cafePlaces).slice(0, 20);
-    const restaurantFinal = dedupByName(restaurantPlaces).slice(0, 20);
-    const parkFinal = dedupByName(parkPlaces).slice(0, 20);
-
-    console.log('카페 상위:', cafeFinal.slice(0,3).map(p=>{
-      const r=reviewData[p.name]||[];
-      const pop=getPopularScore(p.name);
-      return `${p.name}(후기${r.length}개, 인기점${pop}, ${(p.distance||0).toFixed(1)}km)`;
+    const unique = confirmedTagged;
+    const uniqueWithSource = unique.slice(0, 60).map(p => ({
+      ...p,
+      verified: p.verified || '한국관광공사 반려동물 동반 공식 인증'
     }));
 
-    console.log(`카테고리별: 카페${cafeFinal.length}개 식당${restaurantFinal.length}개 공원${parkFinal.length}개`);
+    console.log('공식 인증 장소 샘플:', uniqueWithSource.slice(0, 5).map(p => `${p.name}(${p.catTag}, ${p.distance}km)`));
 
-    // 카카오Results/tourResults/naverResults 호환을 위한 통합
-    const kakaoResults = [...cafeKakao, ...restaurantKakao, ...parkKakao];
-    const tourResults = [];
-    const naverResults = [...cafeNaver, ...restaurantNaver, ...parkNaver];
-
-    // 카카오 결과 변환 + 실제 거리 기반 필터링
-    const kakaoPlaces = kakaoResults.map(p => ({
-      id: p.id,
-      name: p.place_name,
-      category: p.category_name,
-      address: p.address_name,
-      roadAddress: p.road_address_name,
-      phone: p.phone,
-      url: p.place_url,
-      lat: parseFloat(p.y),
-      lng: parseFloat(p.x),
-      distance: calcDistance(lat, lng, parseFloat(p.y), parseFloat(p.x)),
-      source: 'kakao',
-      reviewCount: 0,
-      rating: 0
-    })).filter(p => {
-      if (p.distance > radius / 1000) return false;
-      if (p.distance < minKm) return false;
-      // 펫샵/미용 제외
-      const excludeWords = ['미용', '샵', '살롱', '병원', '동물병원', '약국', '호텔', '유치원'];
-      if (excludeWords.some(k => p.name.includes(k))) return false;
-
-      // 이름에 반려견 관련 키워드 직접 포함된 곳만
-      const petKeywords = ['반려견', '반려동물', '애견', '강아지', '펫프렌들리', '펫카페', '도그카페', '애견카페'];
-      return petKeywords.some(k => p.name.includes(k));
-    });
-
-    // 2. 두 소스 병합 + 중복 제거
-    // 네이버 결과 거리 계산 후 필터링
-    const naverWithDist = naverResults.map(p => ({
-      ...p,
-      distance: calcDistance(lat, lng, p.lat, p.lng)
-    })).filter(p => {
-      if (!isNaN(p.lat) && !isNaN(p.lng) && p.distance >= minKm && p.distance <= radius/1000) {
-        if (activity === '물놀이') {
-          const waterWords = ['수영장', '계곡', '물놀이', '워터파크', '풀장', '풀빌라'];
-          return waterWords.some(k => p.name.includes(k));
-        }
-        return true;
-      }
-      return false;
-    });
-    console.log(`네이버 장소: ${naverWithDist.length}개`);
-
-    const allPlaces = [...tourResults, ...kakaoPlaces, ...naverWithDist];
-    const unique = deduplicatePlaces(allPlaces);
-
-    if (unique.length === 0) {
-      const msg = activity === '물놀이'
-        ? '이 지역 주변 50~100km 내에 반려견 수영장·계곡·풀빌라를 찾지 못했어요. 30분 거리로 바꿔보세요!'
-        : `${durConfig.label} 범위에 ${activity} 장소가 부족해요. 다른 활동이나 거리를 선택해보세요.`;
-      return res.status(404).json({ error: msg });
-    }
-
-    // 카테고리 순서대로 정렬
     const catOrder = activity === '애견카페' ? ['cafe','restaurant','park'] : ['restaurant','cafe','park'];
-    unique.sort((a, b) => {
-      const ai = catOrder.indexOf(a.catTag||'park');
-      const bi = catOrder.indexOf(b.catTag||'park');
-      if (ai !== bi) return ai - bi;
-      return a.distance - b.distance;
-    });
-
-    console.log(`수집된 장소: 관광공사 ${tourResults.length}개 + 카카오 ${kakaoPlaces.length}개 → 중복제거 후 ${unique.length}개`);
-    if (tourResults.length > 0) {
-      console.log('관광공사 장소 샘플:', tourResults.slice(0,3).map(p=>`${p.name}(${p.address})`));
-    }
-    if (kakaoPlaces.length > 0) {
-      console.log('카카오 장소 샘플:', kakaoPlaces.slice(0,3).map(p=>`${p.name}(${p.address})`));
-    }
 
     // 3. Groq에게 코스 설계 요청
     const sizeLabel = dogSize === 'small' ? '소형견(10kg 미만)' : dogSize === 'medium' ? '중형견(10~25kg)' : '대형견(25kg 이상)';
 
-    // source 표시 추가 (선언 먼저)
-    const uniqueWithSource = unique.slice(0, 20).map(p => ({
-      ...p,
-      verified: p.source === 'tourapi' ? '한국관광공사 반려동물 동반 공식 인증' : '카카오맵 검색'
-    }));
     // 장소명 → 거리 맵
     const placeDistMap = {};
     uniqueWithSource.forEach(p => { placeDistMap[p.name] = parseFloat(p.distance || 0); });
@@ -629,6 +527,7 @@ app.post('/api/generate-course', async (req, res) => {
         driveMin: Math.round((maxDist / 50) * 60) + 20,
         totalDistance: parseFloat(maxDist.toFixed(1)),
         places: places.map((p, idx) => ({
+          id: p.id || '',
           name: p.name,
           address: p.address || '',
           distance: parseFloat((p.distance||0).toFixed(1)),
@@ -842,7 +741,7 @@ function gridLat(lat) { return Math.round(lat / 0.09) * 0.09; }   // ~10km
 function gridLng(lng) { return Math.round(lng / 0.11) * 0.11; }   // ~10km
 
 function getCacheKey(lat, lng, activity, duration) {
-  return `v5_${gridLat(lat).toFixed(3)}_${gridLng(lng).toFixed(3)}_${activity}_${duration}`;
+  return `v6_confirmed_only_${gridLat(lat).toFixed(3)}_${gridLng(lng).toFixed(3)}_${activity}_${duration}`;
 }
 
 function getFromCache(key) {
