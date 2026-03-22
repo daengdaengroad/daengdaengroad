@@ -1693,7 +1693,7 @@ function showDetailCourse(c) {
           </div>
           ${p.reason?`<div class="place-reason">${p.reason}</div>`:''}
           ${p.tip?`<div class="place-tip">&#x1F4A1; ${p.tip}</div>`:''}
-          ${p.phone?`<div class="place-tip">&#x1F4DE; ${p.phone}</div>`:''}
+          ${p.phone?`<div class="place-tip">&#x1F4DE; <a href="tel:${String(p.phone).replace(/[^0-9+]/g,'')}" style="color:inherit;text-decoration:none;font-weight:700">${p.phone}</a></div>`:''}
           <div id="review-avg-${(p.id||p.name).replace(/[^a-zA-Z0-9가-힣]/g,'')}" style="font-size:11px;color:var(--amber);margin-top:3px"></div>
         </div>
         <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">
