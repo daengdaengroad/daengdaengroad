@@ -633,7 +633,7 @@ app.post('/api/generate-course', async (req, res) => {
           address: p.address || '',
           distance: parseFloat((p.distance||0).toFixed(1)),
           driveTime: calcDriveTime(p.distance||0),
-          driveMin: Math.round(((p.distance||0)/80)*60),
+          driveMin: Math.round(((p.distance||0) / 50) * 60) + 20,
           phone: p.phone || '',
           url: p.url || '',
           lat: p.lat,
@@ -763,18 +763,16 @@ app.post('/api/generate-course', async (req, res) => {
       console.error('파싱 실패, 원본:', rawText.substring(0, 300));
       throw new Error('JSON 파싱 실패: ' + e.message);
     }
-    // 거리 기반 드라이브 시간 계산 (시속 80km 기준)
-    function calcDriveTime(distKm) {
+    // 드라이브 시간 계산 통일: 거리 / 50kmh * 60 + 준비시간 20분
+    function calcDriveMinutes(distKm) {
       const d = parseFloat(distKm) || 0;
-      if (d <= 0) return '';
-      // 거리별 현실적 속도
-      let speed;
-      if (d <= 10) speed = 30;
-      else if (d <= 30) speed = 50;
-      else speed = 70;
-      const driveMin = Math.round((d / speed) * 60);
-      // 준비시간 20분 (옷입고 강아지 준비 + 주차)
-      const totalMin = driveMin + 20;
+      if (d <= 0) return 0;
+      return Math.round((d / 50) * 60) + 20;
+    }
+
+    function calcDriveTime(distKm) {
+      const totalMin = calcDriveMinutes(distKm);
+      if (totalMin <= 0) return '';
       const h = Math.floor(totalMin / 60);
       const m = totalMin % 60;
       return h > 0 ? `${h}시간 ${m}분` : `${m}분`;
@@ -792,12 +790,13 @@ app.post('/api/generate-course', async (req, res) => {
         if (realDist > 0) {
           p.distance = realDist;
           p.driveTime = calcDriveTime(realDist);
-          p.driveMin = Math.round((realDist / 80) * 60);
+          p.driveMin = calcDriveMinutes(realDist);
         }
       });
       const maxDist = places.reduce((m, p) => Math.max(m, parseFloat(p.distance)||0), 0);
       if (maxDist > 0) {
         course.driveTime = calcDriveTime(maxDist);
+        course.driveMin = calcDriveMinutes(maxDist);
         course.totalDistance = parseFloat(maxDist.toFixed(1));
       }
       console.log(`  코스: ${course.title} → ${course.driveTime} (${maxDist}km)`);
