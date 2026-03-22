@@ -1,10 +1,10 @@
-let currentUser = null;
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 const mongoose = require('mongoose');
 
 // ── MongoDB 연결 ──
@@ -30,6 +30,45 @@ const userSchema = new mongoose.Schema({
   updatedAt: { type: Date, default: Date.now }
 });
 const User = mongoose.models.User || mongoose.model('User', userSchema);
+
+// ── 간단 세션 저장소 (멀티유저 currentUser 전역 버그 방지) ──
+const userSessions = new Map();
+
+function parseCookies(req) {
+  const cookieHeader = req.headers.cookie || '';
+  return cookieHeader.split(';').reduce((acc, part) => {
+    const [rawKey, ...rawValue] = part.trim().split('=');
+    if (!rawKey) return acc;
+    acc[rawKey] = decodeURIComponent(rawValue.join('=') || '');
+    return acc;
+  }, {});
+}
+
+function createSession(user) {
+  const sessionId = crypto.randomBytes(24).toString('hex');
+  userSessions.set(sessionId, { ...user, updatedAt: Date.now() });
+  return sessionId;
+}
+
+function getSessionUser(req) {
+  const cookies = parseCookies(req);
+  const sessionId = cookies.daengdaengroad_sid;
+  if (!sessionId) return null;
+  return userSessions.get(sessionId) || null;
+}
+
+function setSessionCookie(res, sessionId) {
+  const isProd = process.env.NODE_ENV === 'production';
+  const cookieParts = [
+    `daengdaengroad_sid=${encodeURIComponent(sessionId)}`,
+    'Path=/',
+    'HttpOnly',
+    'SameSite=Lax',
+    'Max-Age=604800'
+  ];
+  if (isProd) cookieParts.push('Secure');
+  res.setHeader('Set-Cookie', cookieParts.join('; '));
+}
 
 // ── 후기 스키마 ──
 const reviewSchema = new mongoose.Schema({
@@ -80,9 +119,12 @@ const KAKAO_REST_KEY = process.env.KAKAO_REST_KEY;
 const GROQ_API_KEYS = [
   process.env.GROQ_API_KEY_1,
   process.env.GROQ_API_KEY_2,
-];
+].filter(Boolean);
 let groqKeyIndex = 0;
 function getGroqKey() {
+  if (GROQ_API_KEYS.length === 0) {
+    throw new Error('GROQ API 키가 설정되지 않았습니다.');
+  }
   const key = GROQ_API_KEYS[groqKeyIndex % GROQ_API_KEYS.length];
   groqKeyIndex++;
   return key;
@@ -122,15 +164,8 @@ const ACTIVITY_CONFIG = {
 
 const DURATION_CONFIG = {
   '30분 거리':  { minKm: 0,  maxKm: 20,  driveMin: 30,  label: '차로 30분 이내' },
-  '1시간 거리': { minKm: 50, maxKm: 100, driveMin: 60,  label: '차로 1시간 이상' },
-  // 하위 호환
   '1시간 거리': { minKm: 15, maxKm: 50,  driveMin: 60,  label: '차로 1시간 이내' },
   '2시간 이상': { minKm: 50, maxKm: 100, driveMin: 120, label: '차로 2시간 전후' },
-};
-const RADIUS_BY_DURATION = {
-  '30분 거리': 20000, '1시간 거리': 100000,
-  '1시간 거리': 50000, '2시간 이상': 100000,
-  '1시간': 20000, '반나절': 50000, '하루종일': 100000
 };
 
 // ── 카카오맵 장소 검색 ──
@@ -142,7 +177,7 @@ async function searchKakaoPlaces(keyword, lat, lng, radius) {
         query: keyword,
         x: String(lng),
         y: String(lat),
-        radius: 20000,
+        radius: Math.min(Math.max(Number(radius) || 20000, 1), 20000),
         size: 15,
         sort: 'distance'
       }
@@ -1019,18 +1054,19 @@ app.get('/auth/kakao/callback', async (req, res) => {
       console.log(`카카오 로그인: ${nickname} (${kakaoId})`);
     }
 
-    // 클라이언트로 유저 정보 전달 (쿼리스트링으로)
-currentUser = {
-  kakaoId,
-  nickname,
-  profileImage,
-  dogName: user?.dogName || '',
-  dogBreed: user?.dogBreed || '',
-  dogSize: user?.dogSize || 'small',
-  dogPhoto: user?.dogPhoto || ''
-};
+    const sessionUser = {
+      kakaoId,
+      nickname,
+      profileImage,
+      dogName: user?.dogName || '',
+      dogBreed: user?.dogBreed || '',
+      dogSize: user?.dogSize || 'small',
+      dogPhoto: user?.dogPhoto || ''
+    };
+    const sessionId = createSession(sessionUser);
+    setSessionCookie(res, sessionId);
 
-res.redirect('/?login=success');
+    res.redirect('/?login=success');
 
   } catch (e) {
     console.error('카카오 로그인 오류:', e.message);
@@ -1042,14 +1078,28 @@ res.redirect('/?login=success');
 const NAVER_REDIRECT_URI = 'https://daengdaengroad-production.up.railway.app/auth/naver/callback';
 
 app.get('/auth/naver', (req, res) => {
-  const state = Math.random().toString(36).substring(2);
+  const state = crypto.randomBytes(16).toString('hex');
+  const isProd = process.env.NODE_ENV === 'production';
+  const cookieParts = [
+    `naver_oauth_state=${state}`,
+    'Path=/',
+    'HttpOnly',
+    'SameSite=Lax',
+    'Max-Age=600'
+  ];
+  if (isProd) cookieParts.push('Secure');
+  res.setHeader('Set-Cookie', cookieParts.join('; '));
   const naverAuthUrl = `https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id=${NAVER_LOGIN_CLIENT_ID}&redirect_uri=${encodeURIComponent(NAVER_REDIRECT_URI)}&state=${state}`;
   res.redirect(naverAuthUrl);
 });
 
 app.get('/auth/naver/callback', async (req, res) => {
   const { code, state } = req.query;
+  const cookies = parseCookies(req);
   if (!code) return res.redirect('/?error=no_code');
+  if (!state || cookies.naver_oauth_state !== state) {
+    return res.redirect('/?error=invalid_state');
+  }
   try {
     // 토큰 교환
     const tokenRes = await axios.post('https://nid.naver.com/oauth2.0/token', null, {
@@ -1078,18 +1128,24 @@ app.get('/auth/naver/callback', async (req, res) => {
       console.log(`네이버 로그인: ${nickname} (${userId})`);
     }
 
-    const userInfo = encodeURIComponent(JSON.stringify({
-      kakaoId: userId, nickname, profileImage,
-      dogName: user?.dogName || '', dogBreed: user?.dogBreed || '',
-      dogSize: user?.dogSize || 'small', dogPhoto: user?.dogPhoto || ''
-    }));
-    currentUser = {
-  kakaoId: user.id,
-  nickname: user.properties?.nickname,
-  profileImage: user.properties?.profile_image
-};
+    const sessionUser = {
+      kakaoId: userId,
+      nickname,
+      profileImage,
+      dogName: user?.dogName || '',
+      dogBreed: user?.dogBreed || '',
+      dogSize: user?.dogSize || 'small',
+      dogPhoto: user?.dogPhoto || ''
+    };
+    const sessionId = createSession(sessionUser);
+    setSessionCookie(res, sessionId);
 
-res.redirect('/?login=success');
+    res.setHeader('Set-Cookie', [
+      res.getHeader('Set-Cookie'),
+      'naver_oauth_state=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0'
+    ].flat().filter(Boolean));
+
+    res.redirect('/?login=success');
   } catch (e) {
     console.error('네이버 로그인 오류:', e.message);
     res.redirect('/?error=login_failed');
@@ -1135,11 +1191,19 @@ app.get('/auth/google/callback', async (req, res) => {
       console.log(`구글 로그인: ${nickname} (${userId})`);
     }
 
-    const userInfo = encodeURIComponent(JSON.stringify({
-      kakaoId: userId, nickname, profileImage,
-      dogName: user?.dogName || '', dogBreed: user?.dogBreed || '',
-      dogSize: user?.dogSize || 'small', dogPhoto: user?.dogPhoto || ''
-    }));
+    const sessionUser = {
+      kakaoId: userId,
+      nickname,
+      profileImage,
+      dogName: user?.dogName || '',
+      dogBreed: user?.dogBreed || '',
+      dogSize: user?.dogSize || 'small',
+      dogPhoto: user?.dogPhoto || ''
+    };
+    const sessionId = createSession(sessionUser);
+    setSessionCookie(res, sessionId);
+
+    const userInfo = encodeURIComponent(JSON.stringify(sessionUser));
     res.redirect(`/?login=success&user=${userInfo}`);
   } catch (e) {
     console.error('구글 로그인 오류:', e.message);
@@ -1155,9 +1219,25 @@ app.post('/api/user/profile', async (req, res) => {
     if (mongoose.connection.readyState === 1) {
       await User.findOneAndUpdate(
         { kakaoId },
-        { dogName, dogBreed, dogSize, dogPhoto, updatedAt: new Date() }
+        { dogName, dogBreed, dogSize, dogPhoto, updatedAt: new Date() },
+        { upsert: true, new: true }
       );
     }
+
+    const cookies = parseCookies(req);
+    const sessionId = cookies.daengdaengroad_sid;
+    const sessionUser = sessionId ? userSessions.get(sessionId) : null;
+    if (sessionUser && sessionUser.kakaoId === kakaoId) {
+      userSessions.set(sessionId, {
+        ...sessionUser,
+        dogName: dogName || '',
+        dogBreed: dogBreed || '',
+        dogSize: dogSize || 'small',
+        dogPhoto: dogPhoto || '',
+        updatedAt: Date.now()
+      });
+    }
+
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -1220,7 +1300,8 @@ app.get('/', (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.get('/api/me', (req, res) => {
-  res.json({ user: currentUser });
+  const user = getSessionUser(req);
+  res.json({ user });
 });
 app.listen(PORT, () => {
   console.log(`🐾 댕댕로드 서버 시작! http://localhost:${PORT}`);
