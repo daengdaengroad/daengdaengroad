@@ -306,17 +306,9 @@ body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(145deg,#E8
       <div style="font-size:14px;color:var(--brown-lt);margin-bottom:36px;line-height:1.8">강아지와 함께하는<br>반려견 드라이브 코스 추천 🚗</div>
       <div style="width:100%;background:var(--white);border-radius:20px;padding:24px;box-shadow:var(--shadow-lg);margin-bottom:20px">
         <div style="font-size:13px;color:var(--gray);margin-bottom:16px;font-weight:600">1초 만에 시작하기</div>
-        <button onclick="kakaoLogin()" style="width:100%;padding:15px;background:#FEE500;border:none;border-radius:var(--radius);font-size:15px;font-weight:700;color:#191919;font-family:'Noto Sans KR',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 12px rgba(254,229,0,.5);margin-bottom:10px">
+        <button onclick="kakaoLogin()" style="width:100%;padding:16px;background:#FEE500;border:none;border-radius:var(--radius);font-size:16px;font-weight:700;color:#191919;font-family:'Noto Sans KR',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 12px rgba(254,229,0,.5)">
           <svg width="20" height="20" viewBox="0 0 18 18" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M9 0C4.029 0 0 3.137 0 7.007c0 2.496 1.561 4.688 3.926 5.962l-.999 3.734a.225.225 0 00.347.244L7.3 14.41A10.13 10.13 0 009 14.014c4.971 0 9-3.137 9-7.007S13.971 0 9 0z" fill="#191919"/></svg>
           카카오로 시작하기
-        </button>
-        <button onclick="naverLogin()" style="width:100%;padding:15px;background:#03C75A;border:none;border-radius:var(--radius);font-size:15px;font-weight:700;color:#fff;font-family:'Noto Sans KR',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M16.273 12.845L7.376 0H0v24h7.727V11.155L16.624 24H24V0h-7.727z"/></svg>
-          네이버로 시작하기
-        </button>
-        <button onclick="googleLogin()" style="width:100%;padding:15px;background:#fff;border:1.5px solid #ddd;border-radius:var(--radius);font-size:15px;font-weight:700;color:#333;font-family:'Noto Sans KR',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px">
-          <svg width="20" height="20" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
-          구글로 시작하기
         </button>
       </div>
       <div style="font-size:11px;color:var(--gray);line-height:1.8">로그인 시 이용약관 및 개인정보처리방침에 동의하게 됩니다</div>
@@ -698,29 +690,19 @@ window.addEventListener('load',()=>{
     showToast('로그인에 실패했어요. 다시 시도해주세요.');
     window.history.replaceState({}, '', '/');
   }
-  // 카카오 로그인한 유저만 통과 (kakaoId 없으면 무조건 로그인 화면)
+  // 카카오 로그인한 유저만 통과 (kakaoId 없으면 로그인 화면)
   const saved = loadProfile();
   if (saved && saved.kakaoId) {
     applyProfile(saved);
     document.getElementById('bottomTab').style.display='flex';
     goPage('main');
-  } else {
-    // kakaoId 없는 구 프로필은 삭제하고 로그인 화면 유지
-    if (saved && !saved.kakaoId) {
-      localStorage.removeItem('daengdaeng_dog');
-    }
   }
+  // kakaoId 없으면 로그인 페이지 유지
   getLocation();
 });
 
 function kakaoLogin() {
   window.location.href = SERVER + '/auth/kakao';
-}
-function naverLogin() {
-  window.location.href = SERVER + '/auth/naver';
-}
-function googleLogin() {
-  window.location.href = SERVER + '/auth/google';
 }
 
 function saveProfile(p){localStorage.setItem('daengdaeng_dog',JSON.stringify(p));}
