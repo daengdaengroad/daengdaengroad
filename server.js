@@ -90,6 +90,7 @@ const NAVER_CLIENT_ID = process.env.NAVER_CLIENT_ID;
 const NAVER_CLIENT_SECRET = process.env.NAVER_CLIENT_SECRET;
 const TOUR_API_KEY = process.env.TOUR_API_KEY;
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
+const OPENWEATHER_API_KEY = process.env.OPENWEATHER_API_KEY;
 
 // ── 활동 유형별 검색 키워드 & 반경 ──
 const ACTIVITY_CONFIG = {
@@ -1057,6 +1058,18 @@ app.get('/api/weather', async (req, res) => {
   }
 });
 
+function buildSafeClientUser(userDoc = {}) {
+  return {
+    kakaoId: userDoc.kakaoId || '',
+    nickname: userDoc.nickname || '댕댕이 집사',
+    profileImage: userDoc.profileImage || '',
+    dogName: userDoc.dogName || '',
+    dogBreed: userDoc.dogBreed || '',
+    dogSize: userDoc.dogSize || 'small',
+    hasDogPhoto: !!userDoc.dogPhoto
+  };
+}
+
 // ── 카카오 로그인 ──
 const KAKAO_REDIRECT_URI = 'https://daengdaengroad-production.up.railway.app/auth/kakao/callback';
 
@@ -1104,21 +1117,56 @@ app.get('/auth/kakao/callback', async (req, res) => {
       console.log(`카카오 로그인: ${nickname} (${kakaoId})`);
     }
 
-    // 클라이언트로 유저 정보 전달 (쿼리스트링으로)
-    const userInfo = encodeURIComponent(JSON.stringify({
-      kakaoId,
-      nickname,
-      profileImage,
-      dogName: user?.dogName || '',
-      dogBreed: user?.dogBreed || '',
-      dogSize: user?.dogSize || 'small',
-      dogPhoto: user?.dogPhoto || ''
-    }));
-    res.redirect(`/?login=success&user=${userInfo}`);
+    // 큰 dogPhoto(base64)를 쿼리스트링으로 넘기면 431 오류가 날 수 있으므로
+    // 절대 긴 JSON 전체를 붙이지 않고, 짧은 식별자만 전달한다.
+    res.redirect(`/?login=success&kakaoId=${encodeURIComponent(kakaoId)}`);
 
   } catch (e) {
     console.error('카카오 로그인 오류:', e.message);
     res.redirect('/?error=login_failed');
+  }
+});
+
+// 3. 로그인 후 유저 정보 조회
+app.get('/api/user/:kakaoId', async (req, res) => {
+  const kakaoId = String(req.params.kakaoId || '').trim();
+  if (!kakaoId) return res.status(400).json({ error: 'kakaoId 필요' });
+
+  try {
+    if (mongoose.connection.readyState === 1) {
+      const user = await User.findOne({ kakaoId }).lean();
+      if (!user) {
+        return res.json({
+          success: true,
+          user: {
+            kakaoId,
+            nickname: '댕댕이 집사',
+            profileImage: '',
+            dogName: '',
+            dogBreed: '',
+            dogSize: 'small',
+            dogPhoto: ''
+          }
+        });
+      }
+      return res.json({ success: true, user: buildSafeClientUser(user), dogPhoto: user.dogPhoto || '' });
+    }
+
+    return res.json({
+      success: true,
+      user: {
+        kakaoId,
+        nickname: '댕댕이 집사',
+        profileImage: '',
+        dogName: '',
+        dogBreed: '',
+        dogSize: 'small',
+        dogPhoto: ''
+      }
+    });
+  } catch (e) {
+    console.error('유저 조회 오류:', e.message);
+    res.status(500).json({ error: '유저 정보 조회 실패' });
   }
 });
 
