@@ -89,7 +89,7 @@ function getGroqKey() {
 const NAVER_CLIENT_ID = process.env.NAVER_CLIENT_ID;
 const NAVER_CLIENT_SECRET = process.env.NAVER_CLIENT_SECRET;
 const TOUR_API_KEY = process.env.TOUR_API_KEY;
-const OPENWEATHER_API_KEY = process.env.OPENWEATHER_API_KEY;
+const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 
 // ── 활동 유형별 검색 키워드 & 반경 ──
 const ACTIVITY_CONFIG = {
@@ -1183,6 +1183,90 @@ app.post('/api/reviews', async (req, res) => {
   if (reviews[placeId].length > 100) reviews[placeId] = reviews[placeId].slice(0, 100);
   saveReviews(reviews);
   res.json({ success: true, review });
+});
+
+// ── 리뷰 요약 API (Claude) ──
+app.post('/api/review-summary', async (req, res) => {
+  const { placeName, reviews } = req.body;
+  if (!reviews || reviews.length < 2) return res.json({ summary: null });
+  if (!ANTHROPIC_API_KEY) return res.json({ summary: null });
+
+  try {
+    const reviewTexts = reviews.slice(0, 10).map((r, i) =>
+      `${i+1}. ★${r.stars} - ${r.text}`
+    ).join('\n');
+
+    const response = await axios.post('https://api.anthropic.com/v1/messages', {
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 150,
+      messages: [{
+        role: 'user',
+        content: `다음은 "${placeName}"에 대한 반려견 동반 방문 후기들이에요. 핵심을 한 문장(30자 이내)으로 요약해주세요. 이모지 1개 포함. 한국어로.\n\n${reviewTexts}`
+      }]
+    }, {
+      headers: {
+        'x-api-key': ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json'
+      },
+      timeout: 8000
+    });
+
+    const summary = response.data.content[0]?.text?.trim() || null;
+    console.log(`리뷰 요약 [${placeName}]: ${summary}`);
+    res.json({ summary });
+  } catch (e) {
+    console.error('리뷰 요약 오류:', e.message);
+    res.json({ summary: null });
+  }
+});
+
+// ── 챗봇 API (Claude) ──
+app.post('/api/chat', async (req, res) => {
+  const { message, dogName, dogBreed, dogSize, location, weather, history } = req.body;
+  if (!message) return res.status(400).json({ error: '메시지 없음' });
+  if (!ANTHROPIC_API_KEY) return res.status(500).json({ error: 'API 키 없음' });
+
+  try {
+    const sizeLabel = dogSize === 'small' ? '소형견' : dogSize === 'medium' ? '중형견' : '대형견';
+    const systemPrompt = `너는 댕댕로드의 반려견 드라이브 코스 전문 AI 어시스턴트야.
+사용자 강아지 정보: 이름 ${dogName||'강아지'}, 견종 ${dogBreed||'믹스'}, 크기 ${sizeLabel}
+현재 위치: ${location||'위치 미확인'}
+현재 날씨: ${weather||'날씨 미확인'}
+
+답변 규칙:
+- 반드시 한국어로 친근하게 답변
+- 강아지 이름을 자연스럽게 활용
+- 반려견 드라이브, 장소 추천, 날씨 관련 질문에 전문적으로 답변
+- 답변은 3문장 이내로 간결하게
+- 코스 추천 요청 시 "홈 화면에서 코스 만들기를 눌러보세요!" 안내
+- 이모지 적절히 사용`;
+
+    const messages = [
+      ...(history || []).slice(-6), // 최근 6개 대화 유지
+      { role: 'user', content: message }
+    ];
+
+    const response = await axios.post('https://api.anthropic.com/v1/messages', {
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 300,
+      system: systemPrompt,
+      messages
+    }, {
+      headers: {
+        'x-api-key': ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json'
+      },
+      timeout: 15000
+    });
+
+    const reply = response.data.content[0]?.text?.trim() || '죄송해요, 잠시 후 다시 시도해주세요.';
+    res.json({ reply });
+  } catch (e) {
+    console.error('챗봇 오류:', e.message);
+    res.status(500).json({ error: '챗봇 오류', reply: '잠시 후 다시 시도해주세요 🐾' });
+  }
 });
 
 // ── 헬스체크 ──
