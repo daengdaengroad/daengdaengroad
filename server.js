@@ -4,7 +4,6 @@ const cors = require('cors');
 const axios = require('axios');
 const path = require('path');
 const fs = require('fs');
-const crypto = require('crypto');
 const mongoose = require('mongoose');
 
 // ── MongoDB 연결 ──
@@ -30,45 +29,6 @@ const userSchema = new mongoose.Schema({
   updatedAt: { type: Date, default: Date.now }
 });
 const User = mongoose.models.User || mongoose.model('User', userSchema);
-
-// ── 간단 세션 저장소 (멀티유저 currentUser 전역 버그 방지) ──
-const userSessions = new Map();
-
-function parseCookies(req) {
-  const cookieHeader = req.headers.cookie || '';
-  return cookieHeader.split(';').reduce((acc, part) => {
-    const [rawKey, ...rawValue] = part.trim().split('=');
-    if (!rawKey) return acc;
-    acc[rawKey] = decodeURIComponent(rawValue.join('=') || '');
-    return acc;
-  }, {});
-}
-
-function createSession(user) {
-  const sessionId = crypto.randomBytes(24).toString('hex');
-  userSessions.set(sessionId, { ...user, updatedAt: Date.now() });
-  return sessionId;
-}
-
-function getSessionUser(req) {
-  const cookies = parseCookies(req);
-  const sessionId = cookies.daengdaengroad_sid;
-  if (!sessionId) return null;
-  return userSessions.get(sessionId) || null;
-}
-
-function setSessionCookie(res, sessionId) {
-  const isProd = process.env.NODE_ENV === 'production';
-  const cookieParts = [
-    `daengdaengroad_sid=${encodeURIComponent(sessionId)}`,
-    'Path=/',
-    'HttpOnly',
-    'SameSite=Lax',
-    'Max-Age=604800'
-  ];
-  if (isProd) cookieParts.push('Secure');
-  res.setHeader('Set-Cookie', cookieParts.join('; '));
-}
 
 // ── 후기 스키마 ──
 const reviewSchema = new mongoose.Schema({
@@ -119,12 +79,9 @@ const KAKAO_REST_KEY = process.env.KAKAO_REST_KEY;
 const GROQ_API_KEYS = [
   process.env.GROQ_API_KEY_1,
   process.env.GROQ_API_KEY_2,
-].filter(Boolean);
+];
 let groqKeyIndex = 0;
 function getGroqKey() {
-  if (GROQ_API_KEYS.length === 0) {
-    throw new Error('GROQ API 키가 설정되지 않았습니다.');
-  }
   const key = GROQ_API_KEYS[groqKeyIndex % GROQ_API_KEYS.length];
   groqKeyIndex++;
   return key;
@@ -133,10 +90,6 @@ const NAVER_CLIENT_ID = process.env.NAVER_CLIENT_ID;
 const NAVER_CLIENT_SECRET = process.env.NAVER_CLIENT_SECRET;
 const TOUR_API_KEY = process.env.TOUR_API_KEY;
 const OPENWEATHER_API_KEY = process.env.OPENWEATHER_API_KEY;
-const NAVER_LOGIN_CLIENT_ID = process.env.NAVER_LOGIN_CLIENT_ID;
-const NAVER_LOGIN_CLIENT_SECRET = process.env.NAVER_LOGIN_CLIENT_SECRET;
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
-const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 
 // ── 활동 유형별 검색 키워드 & 반경 ──
 const ACTIVITY_CONFIG = {
@@ -164,8 +117,15 @@ const ACTIVITY_CONFIG = {
 
 const DURATION_CONFIG = {
   '30분 거리':  { minKm: 0,  maxKm: 20,  driveMin: 30,  label: '차로 30분 이내' },
+  '1시간 거리': { minKm: 50, maxKm: 100, driveMin: 60,  label: '차로 1시간 이상' },
+  // 하위 호환
   '1시간 거리': { minKm: 15, maxKm: 50,  driveMin: 60,  label: '차로 1시간 이내' },
   '2시간 이상': { minKm: 50, maxKm: 100, driveMin: 120, label: '차로 2시간 전후' },
+};
+const RADIUS_BY_DURATION = {
+  '30분 거리': 20000, '1시간 거리': 100000,
+  '1시간 거리': 50000, '2시간 이상': 100000,
+  '1시간': 20000, '반나절': 50000, '하루종일': 100000
 };
 
 // ── 카카오맵 장소 검색 ──
@@ -177,7 +137,7 @@ async function searchKakaoPlaces(keyword, lat, lng, radius) {
         query: keyword,
         x: String(lng),
         y: String(lat),
-        radius: Math.min(Math.max(Number(radius) || 20000, 1), 20000),
+        radius: 20000,
         size: 15,
         sort: 'distance'
       }
@@ -230,13 +190,13 @@ async function searchTourPlaces(lat, lng, radius, activityType, minKm=0) {
       lng: parseFloat(p.mapx),
       distance: calcDistance(lat, lng, parseFloat(p.mapy), parseFloat(p.mapx)),
       source: 'tourapi',
-      verified: '한국관광공사 반려동물 동반 공식 인증',
-      confirmedPetFriendly: true
+      verified: '한국관광공사 반려동물 동반 공식 인증'
     })).filter(p => {
-      if (isNaN(p.lat) || isNaN(p.lng)) return false;
-      if (p.distance > radius/1000 || p.distance < minKm) return false;
-      if (isExcludedPlace(p)) return false;
-      return true;
+      if (!isNaN(p.lat) && !isNaN(p.lng) && p.distance <= radius/1000) {
+        const petKw = ['반려','애견','강아지','도그런','펫','공원','산책','계곡','수영','운동장','놀이터','카페'];
+        return petKw.some(k => (p.name||'').includes(k));
+      }
+      return false;
     });
 
   } catch (e) {
@@ -350,55 +310,6 @@ function calcDistance(lat1, lng1, lat2, lng2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
-
-function normalizeText(value = '') {
-  return String(value)
-    .toLowerCase()
-    .replace(/<[^>]+>/g, '')
-    .replace(/\s+/g, '')
-    .replace(/[()\[\]\-_,./]/g, '');
-}
-
-function roundCoord(value, digits = 3) {
-  const num = Number(value);
-  if (!Number.isFinite(num)) return '';
-  return num.toFixed(digits);
-}
-
-function isExcludedPlace(place) {
-  const text = `${place.name || ''} ${place.category || ''}`;
-  const excludeWords = ['미용', '샵', '살롱', '병원', '동물병원', '약국', '호텔', '유치원', '훈련소', '용품'];
-  return excludeWords.some(word => text.includes(word));
-}
-
-function classifyConfirmedCategory(place) {
-  const text = `${place.name || ''} ${place.category || ''}`;
-  if (/(카페|cafe|커피|베이커리|디저트)/i.test(text)) return 'cafe';
-  if (/(식당|레스토랑|음식점|맛집|브런치|bar|바|펍)/i.test(text)) return 'restaurant';
-  if (/(공원|놀이터|산책|수목원|휴양림|둘레길|레포츠|운동장|광장)/i.test(text)) return 'park';
-  if (place.category === '음식점') return 'restaurant';
-  return null;
-}
-
-function deduplicatePlacesStrict(places) {
-  const seen = new Set();
-  return places.filter(place => {
-    const key = [
-      normalizeText(place.name),
-      normalizeText(place.address).slice(0, 24),
-      roundCoord(place.lat),
-      roundCoord(place.lng)
-    ].join('|');
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
-}
-
-function isConfirmedPetPlace(place) {
-  return place.confirmedPetFriendly === true;
-}
-
 // ── 코스 생성 API ──
 app.post('/api/generate-course', async (req, res) => {
   const lat = parseFloat(req.body.lat);
@@ -432,121 +343,358 @@ app.post('/api/generate-course', async (req, res) => {
   console.log(forceRefresh ? `🔄 강제 새로고침 → Groq 호출` : `캐시 미스 → Groq 호출 (3개 생성해서 캐시 저장)`);  
 
   try {
-    // 1. 반려동물 동반 공식 인증 데이터만 사용
-    const confirmedTourPlaces = await searchTourPlaces(lat, lng, radius, activity, minKm);
+    // 1. 카카오맵 + 한국관광공사 API 병렬 검색
+    // 카카오는 최대 20km 제한 → 큰 반경은 중간점에서 여러번 검색
+    async function searchKakaoMultiRadius(keywords, centerLat, centerLng, maxRadius, minRadius) {
+      const results = [];
+      // 0.9도 ≈ 100km, 0.45도 ≈ 50km, 0.2도 ≈ 20km
+      const searchPoints = maxRadius <= 20000
+        ? [{ lat: centerLat, lng: centerLng }]
+        : maxRadius <= 50000
+          ? [
+              { lat: centerLat + 0.22, lng: centerLng },
+              { lat: centerLat - 0.22, lng: centerLng },
+              { lat: centerLat, lng: centerLng + 0.33 },
+              { lat: centerLat, lng: centerLng - 0.33 },
+              { lat: centerLat + 0.15, lng: centerLng + 0.22 },
+              { lat: centerLat - 0.15, lng: centerLng - 0.22 },
+            ]
+          : [
+              // 1시간 이상 / 2시간: 50~100km 범위 12방향으로 촘촘하게
+              { lat: centerLat + 0.55, lng: centerLng },
+              { lat: centerLat - 0.55, lng: centerLng },
+              { lat: centerLat, lng: centerLng + 0.75 },
+              { lat: centerLat, lng: centerLng - 0.75 },
+              { lat: centerLat + 0.4, lng: centerLng + 0.5 },
+              { lat: centerLat - 0.4, lng: centerLng + 0.5 },
+              { lat: centerLat + 0.4, lng: centerLng - 0.5 },
+              { lat: centerLat - 0.4, lng: centerLng - 0.5 },
+              { lat: centerLat + 0.7, lng: centerLng + 0.3 },
+              { lat: centerLat - 0.7, lng: centerLng - 0.3 },
+              { lat: centerLat + 0.3, lng: centerLng + 0.8 },
+              { lat: centerLat - 0.3, lng: centerLng - 0.8 },
+            ];
 
-    const confirmedTagged = deduplicatePlacesStrict(
-      confirmedTourPlaces
-        .map(place => ({ ...place, catTag: classifyConfirmedCategory(place) }))
-        .filter(place => isConfirmedPetPlace(place) && place.catTag && !isExcludedPlace(place))
-    );
-
-    const cafeFinal = confirmedTagged
-      .filter(place => place.catTag === 'cafe')
-      .sort((a, b) => (a.distance || 999) - (b.distance || 999))
-      .slice(0, 20);
-    const restaurantFinal = confirmedTagged
-      .filter(place => place.catTag === 'restaurant')
-      .sort((a, b) => (a.distance || 999) - (b.distance || 999))
-      .slice(0, 20);
-    const parkFinal = confirmedTagged
-      .filter(place => place.catTag === 'park')
-      .sort((a, b) => (a.distance || 999) - (b.distance || 999))
-      .slice(0, 20);
-
-    console.log(`공식 인증 장소만 사용: 전체 ${confirmedTagged.length}개 / 카페 ${cafeFinal.length}개 / 식당 ${restaurantFinal.length}개 / 공원 ${parkFinal.length}개`);
-
-    const requiredCounts = {
-      cafe: cafeFinal.length,
-      restaurant: restaurantFinal.length,
-      park: parkFinal.length
-    };
-
-    const missingCategories = [];
-    if (requiredCounts.cafe === 0) missingCategories.push('애견카페');
-    if (requiredCounts.restaurant === 0) missingCategories.push('애견식당');
-    if (requiredCounts.park === 0) missingCategories.push('애견공원');
-
-    if (missingCategories.length > 0) {
-      return res.status(404).json({
-        error: `공식적으로 반려동물 동반이 확인된 장소만 쓰도록 바꿔서, 현재 범위에서는 ${missingCategories.join(', ')} 데이터를 찾지 못했어요. 다른 거리로 넓혀보세요.`
-      });
+      for (const point of searchPoints) {
+        for (const kw of keywords) {
+          const places = await searchKakaoPlaces(kw, point.lat, point.lng, 20000);
+          results.push(...places);
+        }
+      }
+      return results;
     }
 
-    const unique = confirmedTagged;
-    const uniqueWithSource = unique.slice(0, 60).map(p => ({
+    // 2시간 이상(minKm>20)이면 관광공사 제외 - 가까운 데이터만 줌
+    // 카테고리별 장소 수집
+    const cafeKeywords = ['애견카페', '반려견카페', '강아지카페', '펫카페', '도그카페'];
+    const restaurantKeywords = ['애견 식당', '반려견 식당', '반려동물 식당', '펫프렌들리 레스토랑', '애견 동반 식당'];
+    const parkKeywords = ['애견 공원', '반려견 공원', '반려견 놀이터', '애견 놀이터', '반려동물 공원'];
+
+    const [cafeKakao, restaurantKakao, parkKakao,
+           cafeNaver, restaurantNaver, parkNaver] = await Promise.all([
+      searchKakaoMultiRadius(cafeKeywords, lat, lng, radius, minKm),
+      searchKakaoMultiRadius(restaurantKeywords, lat, lng, radius, minKm),
+      searchKakaoMultiRadius(parkKeywords, lat, lng, radius, minKm),
+      Promise.all(cafeKeywords.slice(0,3).map(q => searchNaverPlaces(q, 10))).then(r => r.flat()),
+      Promise.all(restaurantKeywords.slice(0,3).map(q => searchNaverPlaces(q, 10))).then(r => r.flat()),
+      Promise.all(parkKeywords.slice(0,3).map(q => searchNaverPlaces(q, 10))).then(r => r.flat()),
+    ]);
+
+    // 카테고리별 거리 필터링 및 태그 부착
+    function filterAndTag(places, tag) {
+      return places.map(p => {
+        const pLat = parseFloat(p.lat||p.y||0);
+        const pLng = parseFloat(p.lng||p.x||0);
+        const dist = (pLat && pLng) ? calcDistance(lat, lng, pLat, pLng) : 999;
+        return { ...p, lat: pLat, lng: pLng, distance: parseFloat(dist.toFixed(2)), catTag: tag };
+      }).filter(p => p.lat && p.lng && p.distance >= minKm && p.distance <= radius/1000);
+    }
+
+    function normPlace(p, defaultSource) {
+      return {
+        ...p,
+        lat: p.lat||parseFloat(p.y||0),
+        lng: p.lng||parseFloat(p.x||0),
+        name: p.name||p.place_name||'',
+        address: p.address||p.address_name||'',
+        phone: p.phone||'',
+        url: p.url||p.place_url||'',
+        source: p.source||defaultSource,
+        reviewCount: parseInt(p.reviewCount||0),
+        rating: parseFloat(p.rating||0)
+      };
+    }
+    const cafePlaces = filterAndTag([...cafeKakao, ...cafeNaver].map(p=>normPlace(p,'kakao')), 'cafe');
+    const restaurantPlaces = filterAndTag([...restaurantKakao, ...restaurantNaver].map(p=>normPlace(p,'kakao')), 'restaurant');
+    const parkPlaces = filterAndTag([...parkKakao, ...parkNaver].map(p=>normPlace(p,'kakao')), 'park');
+
+    // 후기 평점 기반 정렬 (후기 없으면 거리순)
+    const reviewData = loadReviews();
+    function getScore(p) {
+      // 1. 앱 내부 후기 (실제 방문자) - 가중치 최대
+      const inAppReviews = reviewData[p.id] || reviewData[p.name] || [];
+      const inAppAvg = inAppReviews.length ? inAppReviews.reduce((s,x)=>s+x.stars,0)/inAppReviews.length : 0;
+      const inAppScore = inAppAvg * Math.log(inAppReviews.length + 1) * 3;
+
+      // 2. 수동 인기DB 점수 (0~100)
+      const popularScore = getPopularScore(p.name) * 0.5;
+
+      // 3. 후기 없고 인기DB도 없으면 거리 가까울수록 보너스
+      const distBonus = (inAppReviews.length === 0 && popularScore === 0)
+        ? Math.max(0, 10 - (p.distance||10)) * 0.15
+        : 0;
+
+      return inAppScore + popularScore + distBonus;
+    }
+    function dedupByName(arr) {
+      const seen = new Set();
+      return arr
+        .filter(p => { if(seen.has(p.name)) return false; seen.add(p.name); return true; })
+        .sort((a,b) => getScore(b) - getScore(a)); // 평점 높은 순
+    }
+    const cafeFinal = dedupByName(cafePlaces).slice(0, 20);
+    const restaurantFinal = dedupByName(restaurantPlaces).slice(0, 20);
+    const parkFinal = dedupByName(parkPlaces).slice(0, 20);
+
+    console.log(`카테고리별(실시간): 카페${cafeFinal.length}개 식당${restaurantFinal.length}개 공원${parkFinal.length}개`);
+
+    // 카카오Results/tourResults/naverResults 호환을 위한 통합
+    const kakaoResults = [...cafeKakao, ...restaurantKakao, ...parkKakao];
+    const tourResults = [];
+    const naverResults = [...cafeNaver, ...restaurantNaver, ...parkNaver];
+
+    // 카카오 결과 변환 + 실제 거리 기반 필터링
+    const kakaoPlaces = kakaoResults.map(p => ({
+      id: p.id,
+      name: p.place_name,
+      category: p.category_name,
+      address: p.address_name,
+      roadAddress: p.road_address_name,
+      phone: p.phone,
+      url: p.place_url,
+      lat: parseFloat(p.y),
+      lng: parseFloat(p.x),
+      distance: calcDistance(lat, lng, parseFloat(p.y), parseFloat(p.x)),
+      source: 'kakao',
+      reviewCount: 0,
+      rating: 0
+    })).filter(p => {
+      if (p.distance > radius / 1000) return false;
+      if (p.distance < minKm) return false;
+      // 펫샵/미용 제외
+      const excludeWords = ['미용', '샵', '살롱', '병원', '동물병원', '약국', '호텔', '유치원'];
+      if (excludeWords.some(k => p.name.includes(k))) return false;
+
+      // 이름에 반려견 관련 키워드 직접 포함된 곳만
+      const petKeywords = ['반려견', '반려동물', '애견', '강아지', '펫프렌들리', '펫카페', '도그카페', '애견카페'];
+      return petKeywords.some(k => p.name.includes(k));
+    });
+
+    // 2. 두 소스 병합 + 중복 제거
+    // 네이버 결과 거리 계산 후 필터링
+    const naverWithDist = naverResults.map(p => ({
       ...p,
-      verified: p.verified || '한국관광공사 반려동물 동반 공식 인증'
-    }));
+      distance: calcDistance(lat, lng, p.lat, p.lng)
+    })).filter(p => {
+      if (!isNaN(p.lat) && !isNaN(p.lng) && p.distance >= minKm && p.distance <= radius/1000) {
+        if (activity === '물놀이') {
+          const waterWords = ['수영장', '계곡', '물놀이', '워터파크', '풀장', '풀빌라'];
+          return waterWords.some(k => p.name.includes(k));
+        }
+        return true;
+      }
+      return false;
+    });
+    console.log(`네이버 장소: ${naverWithDist.length}개`);
 
-    console.log('공식 인증 장소 샘플:', uniqueWithSource.slice(0, 5).map(p => `${p.name}(${p.catTag}, ${p.distance}km)`));
+    const allPlaces = [...tourResults, ...kakaoPlaces, ...naverWithDist];
+    const unique = deduplicatePlaces(allPlaces);
 
+    if (unique.length === 0) {
+      const msg = activity === '물놀이'
+        ? '이 지역 주변 50~100km 내에 반려견 수영장·계곡·풀빌라를 찾지 못했어요. 30분 거리로 바꿔보세요!'
+        : `${durConfig.label} 범위에 ${activity} 장소가 부족해요. 다른 활동이나 거리를 선택해보세요.`;
+      return res.status(404).json({ error: msg });
+    }
+
+    // 카테고리 순서대로 정렬
     const catOrder = activity === '애견카페' ? ['cafe','restaurant','park'] : ['restaurant','cafe','park'];
+    unique.sort((a, b) => {
+      const ai = catOrder.indexOf(a.catTag||'park');
+      const bi = catOrder.indexOf(b.catTag||'park');
+      if (ai !== bi) return ai - bi;
+      return a.distance - b.distance;
+    });
+
+    console.log(`수집된 장소: 관광공사 ${tourResults.length}개 + 카카오 ${kakaoPlaces.length}개 → 중복제거 후 ${unique.length}개`);
+    if (tourResults.length > 0) {
+      console.log('관광공사 장소 샘플:', tourResults.slice(0,3).map(p=>`${p.name}(${p.address})`));
+    }
+    if (kakaoPlaces.length > 0) {
+      console.log('카카오 장소 샘플:', kakaoPlaces.slice(0,3).map(p=>`${p.name}(${p.address})`));
+    }
 
     // 3. Groq에게 코스 설계 요청
     const sizeLabel = dogSize === 'small' ? '소형견(10kg 미만)' : dogSize === 'medium' ? '중형견(10~25kg)' : '대형견(25kg 이상)';
 
+    // source 표시 추가 (선언 먼저)
+    const uniqueWithSource = unique.slice(0, 20).map(p => ({
+      ...p,
+      verified: p.source === 'tourapi' ? '한국관광공사 반려동물 동반 공식 인증' : '카카오맵 검색'
+    }));
     // 장소명 → 거리 맵
     const placeDistMap = {};
     uniqueWithSource.forEach(p => { placeDistMap[p.name] = parseFloat(p.distance || 0); });
 
-    // ── Groq 없이 직접 코스 조합 ──
-    const bycat = { cafe: cafeFinal.slice(), restaurant: restaurantFinal.slice(), park: parkFinal.slice() };
-
-    // 카테고리별 랜덤 셔플
-    Object.keys(bycat).forEach(cat => {
-      bycat[cat] = bycat[cat].sort(() => Math.random() - 0.5);
-    });
-
-    // 코스 3개 생성 (각 카테고리에서 랜덤 1개씩 선택)
-    const builtCourses = [];
-    const usedNames = new Set();
-    const courseCount = Math.min(20, Math.max(cafeFinal.length, restaurantFinal.length, parkFinal.length));
-
-    for (let i = 0; i < courseCount; i++) {
-      const places = [];
-      for (const cat of catOrder) {
-        const pool = bycat[cat].filter(p => !usedNames.has(p.name));
-        if (pool.length === 0) continue;
-        const pick = pool[0]; // 이미 랜덤 셔플됨
-        usedNames.add(pick.name);
-        places.push({ ...pick, catTag: cat });
-      }
-      if (places.length === 0) continue;
-
-      // catOrder 순서로 정렬 보장
-      places.sort((a, b) => catOrder.indexOf(a.catTag) - catOrder.indexOf(b.catTag));
-
-      const maxDist = places.reduce((m, p) => Math.max(m, p.distance||0), 0);
-      const firstName = places[0]?.name || '';
-      const lastName = places[places.length-1]?.name || '';
-      builtCourses.push({
-        title: `${firstName} 코스`,
-        theme: catOrder.map(c => c==='cafe'?'카페':c==='restaurant'?'식당':'공원').join('→'),
-        driveTime: calcDriveTime(maxDist),
-        driveMin: Math.round((maxDist / 50) * 60) + 20,
-        totalDistance: parseFloat(maxDist.toFixed(1)),
-        places: places.map((p, idx) => ({
-          id: p.id || '',
-          name: p.name,
-          address: p.address || '',
-          distance: parseFloat((p.distance||0).toFixed(1)),
-          driveTime: calcDriveTime(p.distance||0),
-          driveMin: Math.round(((p.distance||0) / 50) * 60) + 20,
-          phone: p.phone || '',
-          url: p.url || '',
-          lat: p.lat,
-          lng: p.lng,
-          reason: idx===0 ? `${p.name}에서 시작하는 코스` : `함께 방문하기 좋은 곳`,
-          catTag: p.catTag
-        })),
-        highlight: `${firstName}부터 시작하는 알찬 코스`
+    // ── 스마트 코스 조합 ──
+    // popular_places.json DB와 실시간 검색 결과 병합 후 점수 기반 정렬
+    function mergeWithDB(places, cat) {
+      const dbPlaces = (POPULAR_DB[cat] || []).map(p => ({
+        ...p, catTag: cat,
+        distance: (p.lat && p.lng) ? calcDistance(lat, lng, p.lat, p.lng) : 999,
+      })).filter(p => p.distance >= minKm && p.distance <= radius/1000);
+      const all = [...places, ...dbPlaces];
+      // 이름 기준 중복 제거 (DB 데이터 우선)
+      const seen = new Set();
+      return all.filter(p => {
+        const key = (p.name||'').replace(/\s/g,'').toLowerCase();
+        if(seen.has(key)) return false;
+        seen.add(key); return true;
       });
     }
 
+    function getSmartScore(p) {
+      // 1. 앱 내부 후기 (가중치 최대)
+      const inAppReviews = reviewData[p.id] || reviewData[p.name] || [];
+      const inAppAvg = inAppReviews.length ? inAppReviews.reduce((s,x)=>s+x.stars,0)/inAppReviews.length : 0;
+      const inAppScore = inAppAvg * Math.log(inAppReviews.length + 1) * 5;
+
+      // 2. popular_places DB 인기 점수
+      const popularScore = (p.score || getPopularScore(p.name)) * 0.6;
+
+      // 3. 관광공사 공식 인증 보너스
+      const verifiedBonus = p.source === 'tourapi' ? 15 : 0;
+
+      // 4. 거리 점수 (가까울수록 높음, 단 minKm 이상)
+      const dist = p.distance || 0;
+      const distScore = Math.max(0, 20 - dist) * 0.3;
+
+      // 5. 네이버 리뷰 수 보너스
+      const naverScore = Math.log((p.reviewCount||0) + 1) * 0.5;
+
+      return inAppScore + popularScore + verifiedBonus + distScore + naverScore;
+    }
+
+    function smartDedupSort(arr) {
+      const seen = new Set();
+      return arr
+        .filter(p => {
+          const key = (p.name||'').replace(/\s/g,'').toLowerCase();
+          if(seen.has(key)) return false;
+          seen.add(key); return true;
+        })
+        .sort((a,b) => getSmartScore(b) - getSmartScore(a));
+    }
+
+    // DB와 실시간 검색 결과 병합
+    const cafeMerged = smartDedupSort(mergeWithDB(cafePlaces, 'cafe')).slice(0, 30);
+    const restaurantMerged = smartDedupSort(mergeWithDB(restaurantPlaces, 'restaurant')).slice(0, 30);
+    const parkMerged = smartDedupSort(mergeWithDB(parkPlaces, 'park')).slice(0, 30);
+
+    console.log('카페 상위(스마트):', cafeMerged.slice(0,3).map(p=>
+      `${p.name}(점수${getSmartScore(p).toFixed(1)}, ${(p.distance||0).toFixed(1)}km)`
+    ));
+    console.log(`카테고리별: 카페${cafeMerged.length}개 식당${restaurantMerged.length}개 공원${parkMerged.length}개`);
+
+    // ── 코스 조합 (카페/식당/공원 각 1개씩, 절대 중복 없음) ──
+    const bycat = {
+      cafe: cafeMerged.slice(),
+      restaurant: restaurantMerged.slice(),
+      park: parkMerged.slice()
+    };
+
+    // 코스 간 장소 거리 최적화 (코스 내 장소들이 서로 15km 이내)
+    function isCoherentCourse(places) {
+      if (places.length < 2) return true;
+      for (let i = 0; i < places.length - 1; i++) {
+        const d = calcDistance(places[i].lat, places[i].lng, places[i+1].lat, places[i+1].lng);
+        if (d > 20) return false; // 장소 간 20km 이내
+      }
+      return true;
+    }
+
+    const builtCourses = [];
+    const usedNames = new Set();
+
+    // 상위 점수 장소 위주로 코스 조합 (최대 20개)
+    const maxCourses = 20;
+    const cafePool = bycat.cafe.slice();
+    const restPool = bycat.restaurant.slice();
+    const parkPool = bycat.park.slice();
+
+    for (let ci = 0; ci < cafePool.length && builtCourses.length < maxCourses; ci++) {
+      for (let ri = 0; ri < restPool.length && builtCourses.length < maxCourses; ri++) {
+        for (let pi = 0; pi < parkPool.length && builtCourses.length < maxCourses; pi++) {
+          const cafe = cafePool[ci];
+          const rest = restPool[ri];
+          const park = parkPool[pi];
+
+          // 이름 중복 체크 (같은 코스 내)
+          if (cafe.name === rest.name || cafe.name === park.name || rest.name === park.name) continue;
+
+          // 이미 사용된 조합 체크
+          const combo = [cafe.name, rest.name, park.name].sort().join('|');
+          if (usedNames.has(combo)) continue;
+
+          const rawPlaces = catOrder === ['cafe','restaurant','park']
+            ? [cafe, rest, park]
+            : [rest, cafe, park];
+
+          // catOrder에 맞게 정렬
+          const orderedPlaces = catOrder.map(cat => {
+            if(cat==='cafe') return {...cafe, catTag:'cafe'};
+            if(cat==='restaurant') return {...rest, catTag:'restaurant'};
+            return {...park, catTag:'park'};
+          });
+
+          // 코스 일관성 체크 (장소 간 거리)
+          if (!isCoherentCourse(orderedPlaces)) continue;
+
+          usedNames.add(combo);
+          const maxDist = orderedPlaces.reduce((m, p) => Math.max(m, p.distance||0), 0);
+          const firstName = orderedPlaces[0]?.name || '';
+
+          builtCourses.push({
+            title: `${firstName} 코스`,
+            theme: catOrder.map(c => c==='cafe'?'카페':c==='restaurant'?'식당':'공원').join('→'),
+            driveTime: calcDriveTime(maxDist),
+            driveMin: Math.round((maxDist / 50) * 60) + 20,
+            totalDistance: parseFloat(maxDist.toFixed(1)),
+            score: getSmartScore(orderedPlaces[0]),
+            places: orderedPlaces.map((p, idx) => ({
+              name: p.name,
+              address: p.address || '',
+              distance: parseFloat((p.distance||0).toFixed(1)),
+              driveTime: calcDriveTime(p.distance||0),
+              driveMin: Math.round(((p.distance||0)/80)*60),
+              phone: p.phone || '',
+              url: p.url || '',
+              lat: p.lat,
+              lng: p.lng,
+              reason: idx===0 ? `${p.name}에서 시작하는 코스` : `함께 방문하기 좋은 곳`,
+              catTag: p.catTag
+            })),
+            highlight: `${firstName}부터 시작하는 알찬 코스`
+          });
+
+          break; // park 찾으면 다음 카페+식당 조합으로
+        }
+        if (builtCourses.length >= maxCourses) break;
+      }
+      if (builtCourses.length >= maxCourses) break;
+    }
+
     if (builtCourses.length > 0) {
-      // 각 코스 첫 번째 장소 이미지 가져오기
-      // 이미지는 클라이언트에서 처리 (placeId만 전달)
       builtCourses.forEach(c => {
         if (c.places?.[0]) {
           const p = c.places[0];
@@ -554,15 +702,18 @@ app.post('/api/generate-course', async (req, res) => {
           c.placeName = p.name;
         }
       });
-      console.log(`직접 조합 코스: ${builtCourses.length}개`);
+      console.log(`스마트 코스 조합: ${builtCourses.length}개`);
       setToCache(cacheKey, builtCourses);
-      // 첫 반환도 랜덤 3개
-      const pool1 = [...builtCourses];
-      for (let i = pool1.length-1; i>0; i--) {
+
+      // 점수 높은 순 정렬 후 상위 3개 + 약간의 다양성 확보
+      builtCourses.sort((a,b) => (b.score||0) - (a.score||0));
+      // 상위 6개 중 랜덤 3개 (매번 같은 코스 나오지 않게)
+      const top = builtCourses.slice(0, Math.min(6, builtCourses.length));
+      for (let i = top.length-1; i>0; i--) {
         const j = Math.floor(Math.random()*(i+1));
-        [pool1[i],pool1[j]]=[pool1[j],pool1[i]];
+        [top[i],top[j]]=[top[j],top[i]];
       }
-      return res.json({ success: true, courses: pool1.slice(0,3) });
+      return res.json({ success: true, courses: top.slice(0,3) });
     }
     // ── 후기 평점 기반 정렬 ──
     const reviews = loadReviews();
@@ -662,16 +813,18 @@ app.post('/api/generate-course', async (req, res) => {
       console.error('파싱 실패, 원본:', rawText.substring(0, 300));
       throw new Error('JSON 파싱 실패: ' + e.message);
     }
-    // 드라이브 시간 계산 통일: 거리 / 50kmh * 60 + 준비시간 20분
-    function calcDriveMinutes(distKm) {
-      const d = parseFloat(distKm) || 0;
-      if (d <= 0) return 0;
-      return Math.round((d / 50) * 60) + 20;
-    }
-
+    // 거리 기반 드라이브 시간 계산 (시속 80km 기준)
     function calcDriveTime(distKm) {
-      const totalMin = calcDriveMinutes(distKm);
-      if (totalMin <= 0) return '';
+      const d = parseFloat(distKm) || 0;
+      if (d <= 0) return '';
+      // 거리별 현실적 속도
+      let speed;
+      if (d <= 10) speed = 30;
+      else if (d <= 30) speed = 50;
+      else speed = 70;
+      const driveMin = Math.round((d / speed) * 60);
+      // 준비시간 20분 (옷입고 강아지 준비 + 주차)
+      const totalMin = driveMin + 20;
       const h = Math.floor(totalMin / 60);
       const m = totalMin % 60;
       return h > 0 ? `${h}시간 ${m}분` : `${m}분`;
@@ -689,13 +842,12 @@ app.post('/api/generate-course', async (req, res) => {
         if (realDist > 0) {
           p.distance = realDist;
           p.driveTime = calcDriveTime(realDist);
-          p.driveMin = calcDriveMinutes(realDist);
+          p.driveMin = Math.round((realDist / 80) * 60);
         }
       });
       const maxDist = places.reduce((m, p) => Math.max(m, parseFloat(p.distance)||0), 0);
       if (maxDist > 0) {
         course.driveTime = calcDriveTime(maxDist);
-        course.driveMin = calcDriveMinutes(maxDist);
         course.totalDistance = parseFloat(maxDist.toFixed(1));
       }
       console.log(`  코스: ${course.title} → ${course.driveTime} (${maxDist}km)`);
@@ -741,7 +893,7 @@ function gridLat(lat) { return Math.round(lat / 0.09) * 0.09; }   // ~10km
 function gridLng(lng) { return Math.round(lng / 0.11) * 0.11; }   // ~10km
 
 function getCacheKey(lat, lng, activity, duration) {
-  return `v6_confirmed_only_${gridLat(lat).toFixed(3)}_${gridLng(lng).toFixed(3)}_${activity}_${duration}`;
+  return `v5_${gridLat(lat).toFixed(3)}_${gridLng(lng).toFixed(3)}_${activity}_${duration}`;
 }
 
 function getFromCache(key) {
@@ -952,7 +1104,8 @@ app.get('/auth/kakao/callback', async (req, res) => {
       console.log(`카카오 로그인: ${nickname} (${kakaoId})`);
     }
 
-    const sessionUser = {
+    // 클라이언트로 유저 정보 전달 (쿼리스트링으로)
+    const userInfo = encodeURIComponent(JSON.stringify({
       kakaoId,
       nickname,
       profileImage,
@@ -960,151 +1113,11 @@ app.get('/auth/kakao/callback', async (req, res) => {
       dogBreed: user?.dogBreed || '',
       dogSize: user?.dogSize || 'small',
       dogPhoto: user?.dogPhoto || ''
-    };
-    const sessionId = createSession(sessionUser);
-    setSessionCookie(res, sessionId);
-
-    res.redirect('/?login=success');
+    }));
+    res.redirect(`/?login=success&user=${userInfo}`);
 
   } catch (e) {
     console.error('카카오 로그인 오류:', e.message);
-    res.redirect('/?error=login_failed');
-  }
-});
-
-// ── 네이버 로그인 ──
-const NAVER_REDIRECT_URI = 'https://daengdaengroad-production.up.railway.app/auth/naver/callback';
-
-app.get('/auth/naver', (req, res) => {
-  const state = crypto.randomBytes(16).toString('hex');
-  const isProd = process.env.NODE_ENV === 'production';
-  const cookieParts = [
-    `naver_oauth_state=${state}`,
-    'Path=/',
-    'HttpOnly',
-    'SameSite=Lax',
-    'Max-Age=600'
-  ];
-  if (isProd) cookieParts.push('Secure');
-  res.setHeader('Set-Cookie', cookieParts.join('; '));
-  const naverAuthUrl = `https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id=${NAVER_LOGIN_CLIENT_ID}&redirect_uri=${encodeURIComponent(NAVER_REDIRECT_URI)}&state=${state}`;
-  res.redirect(naverAuthUrl);
-});
-
-app.get('/auth/naver/callback', async (req, res) => {
-  const { code, state } = req.query;
-  const cookies = parseCookies(req);
-  if (!code) return res.redirect('/?error=no_code');
-  if (!state || cookies.naver_oauth_state !== state) {
-    return res.redirect('/?error=invalid_state');
-  }
-  try {
-    // 토큰 교환
-    const tokenRes = await axios.post('https://nid.naver.com/oauth2.0/token', null, {
-      params: { grant_type: 'authorization_code', client_id: NAVER_LOGIN_CLIENT_ID, client_secret: NAVER_LOGIN_CLIENT_SECRET, code, state },
-      timeout: 5000
-    });
-    const accessToken = tokenRes.data.access_token;
-
-    // 유저 정보
-    const userRes = await axios.get('https://openapi.naver.com/v1/nid/me', {
-      headers: { Authorization: `Bearer ${accessToken}` }
-    });
-    const naverUser = userRes.data.response;
-    const userId = 'naver_' + naverUser.id;
-    const nickname = naverUser.nickname || naverUser.name || '댕댕이 집사';
-    const profileImage = naverUser.profile_image || '';
-
-    // MongoDB 저장
-    let user = null;
-    if (mongoose.connection.readyState === 1) {
-      user = await User.findOneAndUpdate(
-        { kakaoId: userId },
-        { kakaoId: userId, nickname, profileImage, updatedAt: new Date() },
-        { upsert: true, new: true }
-      );
-      console.log(`네이버 로그인: ${nickname} (${userId})`);
-    }
-
-    const sessionUser = {
-      kakaoId: userId,
-      nickname,
-      profileImage,
-      dogName: user?.dogName || '',
-      dogBreed: user?.dogBreed || '',
-      dogSize: user?.dogSize || 'small',
-      dogPhoto: user?.dogPhoto || ''
-    };
-    const sessionId = createSession(sessionUser);
-    setSessionCookie(res, sessionId);
-
-    res.setHeader('Set-Cookie', [
-      res.getHeader('Set-Cookie'),
-      'naver_oauth_state=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0'
-    ].flat().filter(Boolean));
-
-    res.redirect('/?login=success');
-  } catch (e) {
-    console.error('네이버 로그인 오류:', e.message);
-    res.redirect('/?error=login_failed');
-  }
-});
-
-// ── 구글 로그인 ──
-const GOOGLE_REDIRECT_URI = 'https://daengdaengroad-production.up.railway.app/auth/google/callback';
-
-app.get('/auth/google', (req, res) => {
-  const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(GOOGLE_REDIRECT_URI)}&response_type=code&scope=profile&access_type=offline`;
-  res.redirect(googleAuthUrl);
-});
-
-app.get('/auth/google/callback', async (req, res) => {
-  const { code } = req.query;
-  if (!code) return res.redirect('/?error=no_code');
-  try {
-    // 토큰 교환
-    const tokenRes = await axios.post('https://oauth2.googleapis.com/token', {
-      code, client_id: GOOGLE_CLIENT_ID, client_secret: GOOGLE_CLIENT_SECRET,
-      redirect_uri: GOOGLE_REDIRECT_URI, grant_type: 'authorization_code'
-    }, { timeout: 5000 });
-    const accessToken = tokenRes.data.access_token;
-
-    // 유저 정보
-    const userRes = await axios.get('https://www.googleapis.com/oauth2/v2/userinfo', {
-      headers: { Authorization: `Bearer ${accessToken}` }
-    });
-    const googleUser = userRes.data;
-    const userId = 'google_' + googleUser.id;
-    const nickname = googleUser.name || '댕댕이 집사';
-    const profileImage = googleUser.picture || '';
-
-    // MongoDB 저장
-    let user = null;
-    if (mongoose.connection.readyState === 1) {
-      user = await User.findOneAndUpdate(
-        { kakaoId: userId },
-        { kakaoId: userId, nickname, profileImage, updatedAt: new Date() },
-        { upsert: true, new: true }
-      );
-      console.log(`구글 로그인: ${nickname} (${userId})`);
-    }
-
-    const sessionUser = {
-      kakaoId: userId,
-      nickname,
-      profileImage,
-      dogName: user?.dogName || '',
-      dogBreed: user?.dogBreed || '',
-      dogSize: user?.dogSize || 'small',
-      dogPhoto: user?.dogPhoto || ''
-    };
-    const sessionId = createSession(sessionUser);
-    setSessionCookie(res, sessionId);
-
-    const userInfo = encodeURIComponent(JSON.stringify(sessionUser));
-    res.redirect(`/?login=success&user=${userInfo}`);
-  } catch (e) {
-    console.error('구글 로그인 오류:', e.message);
     res.redirect('/?error=login_failed');
   }
 });
@@ -1117,25 +1130,9 @@ app.post('/api/user/profile', async (req, res) => {
     if (mongoose.connection.readyState === 1) {
       await User.findOneAndUpdate(
         { kakaoId },
-        { dogName, dogBreed, dogSize, dogPhoto, updatedAt: new Date() },
-        { upsert: true, new: true }
+        { dogName, dogBreed, dogSize, dogPhoto, updatedAt: new Date() }
       );
     }
-
-    const cookies = parseCookies(req);
-    const sessionId = cookies.daengdaengroad_sid;
-    const sessionUser = sessionId ? userSessions.get(sessionId) : null;
-    if (sessionUser && sessionUser.kakaoId === kakaoId) {
-      userSessions.set(sessionId, {
-        ...sessionUser,
-        dogName: dogName || '',
-        dogBreed: dogBreed || '',
-        dogSize: dogSize || 'small',
-        dogPhoto: dogPhoto || '',
-        updatedAt: Date.now()
-      });
-    }
-
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -1197,10 +1194,6 @@ app.get('/', (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.get('/api/me', (req, res) => {
-  const user = getSessionUser(req);
-  res.json({ user });
-});
 app.listen(PORT, () => {
   console.log(`🐾 댕댕로드 서버 시작! http://localhost:${PORT}`);
 });
