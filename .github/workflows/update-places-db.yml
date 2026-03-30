@@ -1,0 +1,38 @@
+name: 전국 애견 장소 DB 자동 업데이트
+
+on:
+  schedule:
+    - cron: '0 18 * * 0'  # 매주 일요일 새벽 3시 (KST = UTC+9)
+  workflow_dispatch:        # 수동 실행 버튼도 가능
+
+jobs:
+  update-db:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 코드 체크아웃
+        uses: actions/checkout@v4
+
+      - name: Node.js 설정
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 의존성 설치
+        run: npm install
+
+      - name: 전국 DB 수집 실행
+        env:
+          KAKAO_REST_KEY: ${{ secrets.KAKAO_REST_KEY }}
+          NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
+          NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
+          TOUR_API_KEY: ${{ secrets.TOUR_API_KEY }}
+        run: node build_places_db.js
+
+      - name: 변경사항 커밋 & 푸시
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Actions"
+          git add popular_places.json
+          git diff --staged --quiet || git commit -m "auto: 전국 애견 장소 DB 자동 업데이트 $(date +'%Y-%m-%d')"
+          git push
