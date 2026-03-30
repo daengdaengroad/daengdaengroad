@@ -1030,7 +1030,7 @@ async function sendChat() {
         dogSize: p.size || 'small',
         location: currentLocation || '위치 미확인',
         weather: document.getElementById('savedWeatherTime')?.textContent || '',
-        history: chatHistory.slice(-6)
+        history: chatHistory.slice(-4) // 최근 4개로 줄임
       })
     });
     const data = await res.json();

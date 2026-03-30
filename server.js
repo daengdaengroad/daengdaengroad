@@ -1227,6 +1227,13 @@ app.post('/api/chat', async (req, res) => {
   if (!message) return res.status(400).json({ error: '메시지 없음' });
   if (!ANTHROPIC_API_KEY) return res.status(500).json({ error: 'API 키 없음' });
 
+  // 메시지 길이 제한
+  const trimmedMessage = message.slice(0, 500);
+  const trimmedHistory = (history || []).slice(-4).map(h => ({
+    role: h.role,
+    content: String(h.content).slice(0, 300)
+  }));
+
   try {
     const sizeLabel = dogSize === 'small' ? '소형견' : dogSize === 'medium' ? '중형견' : '대형견';
     const systemPrompt = `너는 댕댕로드의 반려견 드라이브 코스 전문 AI 어시스턴트야.
@@ -1243,8 +1250,8 @@ app.post('/api/chat', async (req, res) => {
 - 이모지 적절히 사용`;
 
     const messages = [
-      ...(history || []).slice(-6), // 최근 6개 대화 유지
-      { role: 'user', content: message }
+      ...trimmedHistory,
+      { role: 'user', content: trimmedMessage }
     ];
 
     const response = await axios.post('https://api.anthropic.com/v1/messages', {
