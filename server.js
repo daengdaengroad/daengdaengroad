@@ -1065,11 +1065,21 @@ app.get('/api/weather', async (req, res) => {
     const currentWeather = classifyWeather(current.weather[0].id);
     const arrivalWeather = classifyWeather(arrivalForecast.weather[0].id);
 
-    // 도착 시간 문자열 - 한국 시간(UTC+9) 기준
+    // 도착 시간 - 한국 시간(UTC+9) 기준
     const arrivalTime = new Date(Date.now() + driveMin * 60 * 1000);
-    const arrivalHour = (arrivalTime.getUTCHours() + 9) % 24;
-    const arrivalMin = arrivalTime.getUTCMinutes();
-    const arrivalLabel = arrivalMin >= 30 ? `${arrivalHour}시 30분경` : `${arrivalHour}시경`;
+    // toLocaleString으로 한국 시간 직접 추출
+    const koreaTime = new Date(arrivalTime.toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
+    const arrivalHour = koreaTime.getHours();
+    const arrivalMin = koreaTime.getMinutes();
+    // 10분 단위로 반올림
+    const roundedMin = Math.round(arrivalMin / 10) * 10;
+    let arrivalLabel;
+    if (roundedMin === 0 || roundedMin === 60) {
+      const h = roundedMin === 60 ? (arrivalHour + 1) % 24 : arrivalHour;
+      arrivalLabel = `${h}시경`;
+    } else {
+      arrivalLabel = `${arrivalHour}시 ${roundedMin}분경`;
+    }
 
     res.json({
       current: {
