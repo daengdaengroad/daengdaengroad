@@ -707,13 +707,31 @@ app.post('/api/generate-course', async (req, res) => {
 
       // 점수 높은 순 정렬 후 상위 3개 + 약간의 다양성 확보
       builtCourses.sort((a,b) => (b.score||0) - (a.score||0));
-      // 상위 6개 중 랜덤 3개 (매번 같은 코스 나오지 않게)
-      const top = builtCourses.slice(0, Math.min(6, builtCourses.length));
-      for (let i = top.length-1; i>0; i--) {
-        const j = Math.floor(Math.random()*(i+1));
-        [top[i],top[j]]=[top[j],top[i]];
+
+      // 3개 코스가 서로 완전히 다른 업체가 나오도록 선택
+      const final3 = [];
+      const usedPlaceNames = new Set();
+
+      for (const course of builtCourses) {
+        if (final3.length >= 3) break;
+        // 이 코스의 모든 장소가 아직 사용 안 된 것들인지 확인
+        const courseNames = course.places.map(p => p.name);
+        const hasOverlap = courseNames.some(n => usedPlaceNames.has(n));
+        if (!hasOverlap) {
+          final3.push(course);
+          courseNames.forEach(n => usedPlaceNames.add(n));
+        }
       }
-      return res.json({ success: true, courses: top.slice(0,3) });
+
+      // 3개 못 채우면 중복 허용하고 나머지 채움
+      if (final3.length < 3) {
+        for (const course of builtCourses) {
+          if (final3.length >= 3) break;
+          if (!final3.includes(course)) final3.push(course);
+        }
+      }
+
+      return res.json({ success: true, courses: final3 });
     }
     // ── 후기 평점 기반 정렬 ──
     const reviews = loadReviews();

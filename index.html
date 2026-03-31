@@ -649,33 +649,6 @@ body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(145deg,#E8
   </div>
 </div>
 
-<!-- 챗봇 버튼 -->
-<button id="chatBtn" onclick="toggleChat()" style="display:none;position:absolute;bottom:84px;right:16px;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--amber),#CF8B1A);border:none;box-shadow:0 4px 16px rgba(186,117,23,.5);cursor:pointer;font-size:24px;z-index:60;transition:all .25s">💬</button>
-
-<!-- 챗봇 패널 -->
-<div id="chatPanel" style="display:none;position:absolute;bottom:80px;left:12px;right:12px;background:var(--white);border-radius:20px;box-shadow:var(--shadow-lg);z-index:100;overflow:hidden;max-height:420px;flex-direction:column">
-  <div style="padding:14px 16px;background:linear-gradient(135deg,var(--amber),#CF8B1A);display:flex;align-items:center;justify-content:space-between">
-    <div style="display:flex;align-items:center;gap:8px">
-      <div style="font-size:20px">🐾</div>
-      <div>
-        <div style="font-size:14px;font-weight:700;color:#fff">댕댕 AI</div>
-        <div style="font-size:10px;color:rgba(255,255,255,.8)">반려견 드라이브 전문 어시스턴트</div>
-      </div>
-    </div>
-    <button onclick="toggleChat()" style="background:rgba(255,255,255,.2);border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:14px">✕</button>
-  </div>
-  <div id="chatMessages" style="flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;max-height:280px;min-height:180px">
-    <div style="background:var(--amber-lt);border-radius:12px 12px 12px 4px;padding:10px 12px;font-size:13px;color:var(--brown);max-width:85%;line-height:1.5">
-      안녕하세요! 🐾 반려견 드라이브 코스나 장소에 대해 무엇이든 물어보세요!
-    </div>
-  </div>
-  <div style="padding:10px 12px;border-top:1px solid var(--cream);display:flex;gap:8px;align-items:center">
-    <input id="chatInput" type="text" placeholder="메시지를 입력하세요..." 
-      style="flex:1;border:1.5px solid var(--gray-lt);border-radius:20px;padding:9px 14px;font-size:13px;font-family:'Noto Sans KR',sans-serif;outline:none;background:var(--cream)"
-      onkeydown="if(event.key==='Enter')sendChat()">
-    <button onclick="sendChat()" style="width:36px;height:36px;border-radius:50%;background:var(--amber);border:none;cursor:pointer;font-size:16px;flex-shrink:0">➤</button>
-  </div>
-</div>
 
 </div>
 </div>
@@ -709,7 +682,7 @@ window.addEventListener('load',()=>{
       saveProfile(p);
       applyProfile(p);
       document.getElementById('bottomTab').style.display = 'flex';
-      document.getElementById('chatBtn').style.display = 'flex';
+      
       window.history.replaceState({}, '', '/');
       if (user.dogName) { goPage('main'); } else { goPage('doginfo'); }
       showToast(`🐾 ${user.nickname}님 환영해요!`);
@@ -727,7 +700,7 @@ window.addEventListener('load',()=>{
   const saved = loadProfile();
   if (saved && saved.kakaoId) {
     applyProfile(saved);
-    document.getElementById('bottomTab').style.display='flex';document.getElementById('chatBtn').style.display='flex';
+    document.getElementById('bottomTab').style.display='flex';
     goPage('main');
   }
   // kakaoId 없으면 로그인 페이지 유지
@@ -773,7 +746,7 @@ async function saveAndStart(){
       });
     }catch(e){}
   }
-  document.getElementById('bottomTab').style.display='flex';document.getElementById('chatBtn').style.display='flex';
+  document.getElementById('bottomTab').style.display='flex';
   goPage('main');
 }
 
@@ -960,98 +933,6 @@ function selectDuration(el){
 }
 function goPage(id){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById('page-'+id).classList.add('active');document.getElementById('mainScreen').scrollTop=0;}
 function showToast(msg){const t=document.getElementById('toast');t.innerHTML=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800);}
-
-// ── 챗봇 ──
-let chatHistory = [];
-let chatOpen = false;
-
-function toggleChat() {
-  chatOpen = !chatOpen;
-  const panel = document.getElementById('chatPanel');
-  const btn = document.getElementById('chatBtn');
-  panel.style.display = chatOpen ? 'flex' : 'none';
-  panel.style.flexDirection = 'column';
-  btn.textContent = chatOpen ? '✕' : '💬';
-  if (chatOpen) document.getElementById('chatInput').focus();
-}
-
-function addChatMessage(text, isUser) {
-  const messages = document.getElementById('chatMessages');
-  const div = document.createElement('div');
-  div.style.cssText = isUser
-    ? 'background:var(--amber);border-radius:12px 12px 4px 12px;padding:10px 12px;font-size:13px;color:#fff;max-width:85%;align-self:flex-end;line-height:1.5;margin-left:auto'
-    : 'background:var(--amber-lt);border-radius:12px 12px 12px 4px;padding:10px 12px;font-size:13px;color:var(--brown);max-width:85%;line-height:1.5';
-  div.textContent = text;
-  messages.appendChild(div);
-  messages.scrollTop = messages.scrollHeight;
-}
-
-function addChatLoading() {
-  const messages = document.getElementById('chatMessages');
-  const div = document.createElement('div');
-  div.id = 'chatLoading';
-  div.style.cssText = 'background:var(--amber-lt);border-radius:12px 12px 12px 4px;padding:10px 12px;font-size:13px;color:var(--gray);max-width:85%;line-height:1.5';
-  div.textContent = '입력 중...';
-  messages.appendChild(div);
-  messages.scrollTop = messages.scrollHeight;
-}
-
-async function sendChat() {
-  const input = document.getElementById('chatInput');
-  const message = input.value.trim();
-  if (!message) return;
-  input.value = '';
-
-  addChatMessage(message, true);
-  chatHistory.push({ role: 'user', content: message });
-  addChatLoading();
-
-  try {
-    const p = loadProfile() || {};
-    const res = await fetch(`${SERVER}/api/chat`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        message,
-        dogName: p.name || '강아지',
-        dogBreed: p.breed || '믹스',
-        dogSize: p.size || 'small',
-        location: currentLocation || '위치 미확인',
-        weather: document.getElementById('savedWeatherTime')?.textContent || '',
-        history: chatHistory.slice(-4) // 최근 4개로 줄임
-      })
-    });
-    const data = await res.json();
-    const reply = data.reply || '잠시 후 다시 시도해주세요 🐾';
-
-    document.getElementById('chatLoading')?.remove();
-    addChatMessage(reply, false);
-    chatHistory.push({ role: 'assistant', content: reply });
-  } catch (e) {
-    document.getElementById('chatLoading')?.remove();
-    addChatMessage('연결 오류가 발생했어요. 잠시 후 다시 시도해주세요 🐾', false);
-  }
-}
-
-// ── 리뷰 요약 ──
-async function loadReviewSummary(placeName, reviews) {
-  if (!reviews || reviews.length < 2) return;
-  try {
-    const res = await fetch(`${SERVER}/api/review-summary`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ placeName, reviews })
-    });
-    const data = await res.json();
-    if (data.summary) {
-      const el = document.getElementById('reviewSummaryBox');
-      if (el) {
-        el.textContent = data.summary;
-        el.style.display = 'block';
-      }
-    }
-  } catch (e) {}
-}
 
 // ── 핵심: AI 코스 생성 ──
 async function generateCourse(){
