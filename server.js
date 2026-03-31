@@ -1077,6 +1077,7 @@ app.get('/auth/kakao/callback', async (req, res) => {
       params: {
         grant_type: 'authorization_code',
         client_id: KAKAO_REST_KEY,
+        client_secret: process.env.KAKAO_CLIENT_SECRET,
         redirect_uri: KAKAO_REDIRECT_URI,
         code
       },
