@@ -220,13 +220,13 @@ body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(145deg,#E8
 .toast.show{opacity:1}
 </style>
 <!-- Mixpanel -->
-<script type="text/javascript">
-(function(c,a){window.mixpanel=a;var b,d,h,e;b=c.createElement("script");b.type="text/javascript";b.async=!0;b.src="https://cdn.mxpnl.com/libs/mixpanel-2-latest.min.js";d=c.getElementsByTagName("script")[0];d.parentNode.insertBefore(b,d);a.__SV=1.1;a.init=function(f,g){a.config=g=g||{};g.token=f;g.decide_host=g.decide_host||"https://decide.mixpanel.com";g.api_host=g.api_host||"https://api.mixpanel.com";h="disable track track_pageview track_links track_forms register register_once unregister identify name_tag set_config reset people.set people.increment".split(" ");for(e=0;e<h.length;e++)(function(f){a[f]=function(){a.push([f].concat(Array.prototype.slice.call(arguments,0)))}})(h[e]);a._i=[[f,g]]};a.__SV=1.1})(document,window.mixpanel||[]);
-mixpanel.init('8bf2ba0e82bef45f22121e1f8a2fb1b0', {
-  track_pageview: true,
-  persistence: 'localStorage',
-  api_host: 'https://api.mixpanel.com'
-});
+<script src="https://cdn.mxpnl.com/libs/mixpanel-2-latest.min.js"></script>
+<script>
+  mixpanel.init('8bf2ba0e82bef45f22121e1f8a2fb1b0', {
+    track_pageview: true,
+    persistence: 'localStorage',
+    debug: true
+  });
 </script>
 </head>
 <body>
