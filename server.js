@@ -1118,6 +1118,7 @@ app.get('/auth/kakao/callback', async (req, res) => {
 
   } catch (e) {
     console.error('카카오 로그인 오류:', e.message);
+    console.error('카카오 에러 상세:', JSON.stringify(e.response?.data || {}));
     res.redirect('/?error=login_failed');
   }
 });
