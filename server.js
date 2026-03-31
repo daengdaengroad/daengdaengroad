@@ -1072,6 +1072,11 @@ app.get('/auth/kakao/callback', async (req, res) => {
   if (!code) return res.redirect('/?error=no_code');
 
   try {
+    console.log('카카오 토큰 요청 params:', {
+      client_id: KAKAO_REST_KEY,
+      client_secret: process.env.KAKAO_CLIENT_SECRET ? process.env.KAKAO_CLIENT_SECRET.substring(0,5)+'...' : 'MISSING',
+      redirect_uri: KAKAO_REDIRECT_URI
+    });
     // 토큰 교환
     const tokenRes = await axios.post('https://kauth.kakao.com/oauth/token', null, {
       params: {
