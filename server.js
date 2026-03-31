@@ -964,33 +964,11 @@ function getCacheKey(lat, lng, activity, duration) {
 }
 
 function getFromCache(key) {
-  const cache = loadCache();
-  const entry = cache[key];
-  if (!entry) return null;
-  if (Date.now() - entry.createdAt > CACHE_TTL) {
-    delete cache[key];
-    saveCache(cache);
-    return null;
-  }
-  // 캐시된 코스 풀에서 매번 랜덤 3개 선택
-  const pool = [...entry.courses];
-  for (let i = pool.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [pool[i], pool[j]] = [pool[j], pool[i]];
-  }
-  return pool.slice(0, Math.min(3, pool.length));
+  return null; // 캐시 비활성화 - 항상 새로 생성
 }
 
 function setToCache(key, courses) {
-  const cache = loadCache();
-  cache[key] = { createdAt: Date.now(), courses };
-  // 캐시 100개 초과 시 오래된 것 삭제
-  const keys = Object.keys(cache);
-  if (keys.length > 100) {
-    const oldest = keys.sort((a,b) => cache[a].createdAt - cache[b].createdAt)[0];
-    delete cache[oldest];
-  }
-  saveCache(cache);
+  // 캐시 비활성화
 }
 
 // ── 후기 파일 경로 ──
