@@ -736,33 +736,30 @@ app.post('/api/generate-course', async (req, res) => {
 
       setToCache(cacheKey, builtCourses);
 
-      // AI 코스 설명 생성
-      const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
-      if (ANTHROPIC_API_KEY) {
-        try {
-          await Promise.all(final3.map(async (course) => {
-            const placeNames = course.places.map(p => `${p.name}(${p.catTag==='cafe'?'카페':p.catTag==='restaurant'?'식당':'공원'})`).join(', ');
-            const weatherInfo = req.body.weather || '';
-            const response = await axios.post('https://api.anthropic.com/v1/messages', {
-              model: 'claude-haiku-4-5-20251001',
-              max_tokens: 120,
-              messages: [{
-                role: 'user',
-                content: `반려견과 함께하는 드라이브 코스를 소개하는 따뜻하고 설레는 한 줄 설명을 써줘. (40자 이내, 이모지 1개 포함, 한국어)
+      // AI 코스 설명 생성 (Groq - 무료)
+      try {
+        await Promise.all(final3.map(async (course) => {
+          const placeNames = course.places.map(p => `${p.name}(${p.catTag==='cafe'?'카페':p.catTag==='restaurant'?'식당':'공원'})`).join(', ');
+          const weatherInfo = req.body.weather || '';
+          const response = await axios.post('https://api.groq.com/openai/v1/chat/completions', {
+            model: 'llama-3.1-8b-instant',
+            max_tokens: 120,
+            messages: [
+              { role: 'system', content: '너는 반려견 드라이브 코스를 소개하는 따뜻한 어시스턴트야. 항상 한국어로 답해.' },
+              { role: 'user', content: `이 코스를 설레고 따뜻하게 한 줄로 소개해줘. (40자 이내, 이모지 1개, 한국어)
 코스: ${placeNames}
 드라이브: ${course.driveTime}
 ${weatherInfo ? '날씨: '+weatherInfo : ''}
-규칙: 특정 견종/크기 언급 금지. 코스의 매력과 하루 흐름을 자연스럽게 표현.`
-              }]
-            }, {
-              headers: { 'x-api-key': ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-              timeout: 8000
-            });
-            course.aiComment = response.data.content[0]?.text?.trim() || '';
-          }));
-        } catch(e) {
-          console.error('AI 설명 생성 오류:', e.message);
-        }
+규칙: 특정 견종/크기 언급 금지. 코스의 매력과 하루 흐름을 자연스럽게 표현. 설명만 출력.` }
+            ]
+          }, {
+            headers: { 'Authorization': `Bearer ${getGroqKey()}`, 'Content-Type': 'application/json' },
+            timeout: 8000
+          });
+          course.aiComment = response.data.choices[0]?.message?.content?.trim() || '';
+        }));
+      } catch(e) {
+        console.error('AI 설명 생성 오류:', e.message);
       }
 
       return res.json({ success: true, courses: final3 });
