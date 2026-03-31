@@ -337,8 +337,26 @@ app.post('/api/generate-course', async (req, res) => {
   const forceRefresh = req.body.forceRefresh === true;
   const cached = !forceRefresh && getFromCache(cacheKey);
   if (cached) {
-    console.log(`✅ 캐시 히트! Groq 미사용: ${cacheKey}`);
-    return res.json({ success: true, courses: cached, fromCache: true });
+    console.log(`✅ 캐시 히트: ${cacheKey}`);
+    // 캐시에서도 완전 중복 없는 3개 선택
+    const prevNames = new Set(req.body.prevPlaceNames || []);
+    const final3 = [];
+    const usedInFinal = new Set();
+    for (const course of cached) {
+      if (final3.length >= 3) break;
+      const names = course.places.map(p => p.name);
+      if (prevNames.size > 0 && names.some(n => prevNames.has(n))) continue;
+      if (names.some(n => usedInFinal.has(n))) continue;
+      final3.push(course);
+      names.forEach(n => usedInFinal.add(n));
+    }
+    if (final3.length < 3) {
+      for (const course of cached) {
+        if (final3.length >= 3) break;
+        if (!final3.includes(course)) final3.push(course);
+      }
+    }
+    return res.json({ success: true, courses: final3, fromCache: true });
   }
   console.log(forceRefresh ? `🔄 강제 새로고침 → Groq 호출` : `캐시 미스 → Groq 호출 (3개 생성해서 캐시 저장)`);  
 
