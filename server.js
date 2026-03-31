@@ -624,10 +624,10 @@ app.post('/api/generate-course', async (req, res) => {
     }
 
     const builtCourses = [];
-    const usedNames = new Set();
+    const usedCombos = new Set();
 
-    // 상위 점수 장소 위주로 코스 조합 (최대 20개)
-    const maxCourses = 20;
+    // 상위 점수 장소 위주로 코스 조합 (최대 30개)
+    const maxCourses = 30;
     const cafePool = bycat.cafe.slice();
     const restPool = bycat.restaurant.slice();
     const parkPool = bycat.park.slice();
@@ -639,16 +639,12 @@ app.post('/api/generate-course', async (req, res) => {
           const rest = restPool[ri];
           const park = parkPool[pi];
 
-          // 이름 중복 체크 (같은 코스 내)
+          // 같은 코스 내 중복 체크
           if (cafe.name === rest.name || cafe.name === park.name || rest.name === park.name) continue;
 
           // 이미 사용된 조합 체크
           const combo = [cafe.name, rest.name, park.name].sort().join('|');
-          if (usedNames.has(combo)) continue;
-
-          const rawPlaces = catOrder === ['cafe','restaurant','park']
-            ? [cafe, rest, park]
-            : [rest, cafe, park];
+          if (usedCombos.has(combo)) continue;
 
           // catOrder에 맞게 정렬
           const orderedPlaces = catOrder.map(cat => {
@@ -660,7 +656,7 @@ app.post('/api/generate-course', async (req, res) => {
           // 코스 일관성 체크 (장소 간 거리)
           if (!isCoherentCourse(orderedPlaces)) continue;
 
-          usedNames.add(combo);
+          usedCombos.add(combo);
           const maxDist = orderedPlaces.reduce((m, p) => Math.max(m, p.distance||0), 0);
           const firstName = orderedPlaces[0]?.name || '';
 
@@ -687,7 +683,7 @@ app.post('/api/generate-course', async (req, res) => {
             highlight: `${firstName}부터 시작하는 알찬 코스`
           });
 
-          break; // park 찾으면 다음 카페+식당 조합으로
+          break;
         }
         if (builtCourses.length >= maxCourses) break;
       }
@@ -703,31 +699,69 @@ app.post('/api/generate-course', async (req, res) => {
         }
       });
       console.log(`스마트 코스 조합: ${builtCourses.length}개`);
-      setToCache(cacheKey, builtCourses);
 
-      // 점수 높은 순 정렬 후 상위 3개 + 약간의 다양성 확보
+      // 점수 높은 순 정렬
       builtCourses.sort((a,b) => (b.score||0) - (a.score||0));
 
-      // 3개 코스가 서로 완전히 다른 업체가 나오도록 선택
+      // forceRefresh면 캐시 무시하고 새 조합 반환
+      const prevNames = req.body.forceRefresh
+        ? new Set((req.body.prevPlaceNames || []))
+        : new Set();
+
+      // 3개 코스 선택: 코스 간 장소 완전 중복 금지
       const final3 = [];
-      const usedPlaceNames = new Set();
+      const usedInFinal = new Set();
 
       for (const course of builtCourses) {
         if (final3.length >= 3) break;
-        // 이 코스의 모든 장소가 아직 사용 안 된 것들인지 확인
-        const courseNames = course.places.map(p => p.name);
-        const hasOverlap = courseNames.some(n => usedPlaceNames.has(n));
-        if (!hasOverlap) {
-          final3.push(course);
-          courseNames.forEach(n => usedPlaceNames.add(n));
-        }
+        const names = course.places.map(p => p.name);
+
+        // forceRefresh면 이전에 본 장소 제외
+        if (prevNames.size > 0 && names.some(n => prevNames.has(n))) continue;
+
+        // 이미 선택된 코스와 장소 겹치면 제외
+        if (names.some(n => usedInFinal.has(n))) continue;
+
+        final3.push(course);
+        names.forEach(n => usedInFinal.add(n));
       }
 
-      // 3개 못 채우면 중복 허용하고 나머지 채움
+      // 못 채우면 중복 허용하고 채움
       if (final3.length < 3) {
         for (const course of builtCourses) {
           if (final3.length >= 3) break;
           if (!final3.includes(course)) final3.push(course);
+        }
+      }
+
+      setToCache(cacheKey, builtCourses);
+
+      // AI 코스 설명 생성
+      const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
+      if (ANTHROPIC_API_KEY) {
+        try {
+          await Promise.all(final3.map(async (course) => {
+            const placeNames = course.places.map(p => `${p.name}(${p.catTag==='cafe'?'카페':p.catTag==='restaurant'?'식당':'공원'})`).join(', ');
+            const weatherInfo = req.body.weather || '';
+            const response = await axios.post('https://api.anthropic.com/v1/messages', {
+              model: 'claude-haiku-4-5-20251001',
+              max_tokens: 120,
+              messages: [{
+                role: 'user',
+                content: `반려견과 함께하는 드라이브 코스를 소개하는 따뜻하고 설레는 한 줄 설명을 써줘. (40자 이내, 이모지 1개 포함, 한국어)
+코스: ${placeNames}
+드라이브: ${course.driveTime}
+${weatherInfo ? '날씨: '+weatherInfo : ''}
+규칙: 특정 견종/크기 언급 금지. 코스의 매력과 하루 흐름을 자연스럽게 표현.`
+              }]
+            }, {
+              headers: { 'x-api-key': ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+              timeout: 8000
+            });
+            course.aiComment = response.data.content[0]?.text?.trim() || '';
+          }));
+        } catch(e) {
+          console.error('AI 설명 생성 오류:', e.message);
         }
       }
 

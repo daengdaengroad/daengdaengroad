@@ -953,7 +953,14 @@ async function generateCourse(){
     const res=await fetch(`${SERVER}/api/generate-course`,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({lat:currentLat,lng:currentLng,activity,duration,radius:currentRadius,dogName:profile.name,dogBreed:profile.breed,dogSize:profile.size,forceRefresh:!!window._forceRefresh})
+      body:JSON.stringify({
+        lat:currentLat, lng:currentLng, activity, duration,
+        radius:currentRadius, dogName:profile.name, dogBreed:profile.breed,
+        dogSize:profile.size, forceRefresh:!!window._forceRefresh,
+        prevPlaceNames: window._forceRefresh
+          ? (window._currentCourses||[]).flatMap(c=>c.places.map(p=>p.name))
+          : []
+      })
     });
     window._forceRefresh = false;
     clearInterval(stepTimer);
@@ -1013,6 +1020,7 @@ function refreshCourse() {
 }
 
 function renderCourses(courses,dogName,activity,duration){
+  window._currentCourses = courses; // 새로고침 시 제외할 장소 저장
   document.getElementById('resultSubtitle').textContent=`${dogName}와 함께하는 ${activity}`;
   document.getElementById('verifiedText').innerHTML=`${duration} 기준<br>AI 코스 설계`;
   if (activity === '애견카페' || activity === '애견식당') {
@@ -1067,6 +1075,7 @@ function renderCourses(courses,dogName,activity,duration){
         </div>
       </div>
       <div class="course-places">${(c.places||[]).map(p=>`<span class="place-chip ${cc}">&#x2605; ${p.name}</span>`).join('')}</div>
+      ${c.aiComment ? `<div style="margin:0 16px 14px;padding:10px 12px;background:linear-gradient(135deg,var(--amber-lt),var(--cream));border-radius:12px;font-size:12px;color:var(--brown-md);line-height:1.6;font-weight:600">🐾 ${c.aiComment}</div>` : ''}
     </div>
   `}).join('');
 
