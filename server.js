@@ -90,7 +90,6 @@ const NAVER_CLIENT_ID = process.env.NAVER_CLIENT_ID;
 const NAVER_CLIENT_SECRET = process.env.NAVER_CLIENT_SECRET;
 const TOUR_API_KEY = process.env.TOUR_API_KEY;
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
-const OPENWEATHER_API_KEY = process.env.OPENWEATHER_API_KEY;
 
 // ── 활동 유형별 검색 키워드 & 반경 ──
 const ACTIVITY_CONFIG = {
@@ -1058,18 +1057,6 @@ app.get('/api/weather', async (req, res) => {
   }
 });
 
-function buildSafeClientUser(userDoc = {}) {
-  return {
-    kakaoId: userDoc.kakaoId || '',
-    nickname: userDoc.nickname || '댕댕이 집사',
-    profileImage: userDoc.profileImage || '',
-    dogName: userDoc.dogName || '',
-    dogBreed: userDoc.dogBreed || '',
-    dogSize: userDoc.dogSize || 'small',
-    hasDogPhoto: !!userDoc.dogPhoto
-  };
-}
-
 // ── 카카오 로그인 ──
 const KAKAO_REDIRECT_URI = 'https://daengdaengroad-production.up.railway.app/auth/kakao/callback';
 
@@ -1117,9 +1104,16 @@ app.get('/auth/kakao/callback', async (req, res) => {
       console.log(`카카오 로그인: ${nickname} (${kakaoId})`);
     }
 
-    // 큰 dogPhoto(base64)를 쿼리스트링으로 넘기면 431 오류가 날 수 있으므로
-    // 절대 긴 JSON 전체를 붙이지 않고, 짧은 식별자만 전달한다.
-    res.redirect(`/?login=success&kakaoId=${encodeURIComponent(kakaoId)}`);
+    // dogPhoto는 base64라 URL에 넣으면 431 에러 → 제외
+    const userInfo = encodeURIComponent(JSON.stringify({
+      kakaoId,
+      nickname,
+      profileImage,
+      dogName: user?.dogName || '',
+      dogBreed: user?.dogBreed || '',
+      dogSize: user?.dogSize || 'small'
+    }));
+    res.redirect(`/?login=success&user=${userInfo}`);
 
   } catch (e) {
     console.error('카카오 로그인 오류:', e.message);
@@ -1127,46 +1121,98 @@ app.get('/auth/kakao/callback', async (req, res) => {
   }
 });
 
-// 3. 로그인 후 유저 정보 조회
-app.get('/api/user/:kakaoId', async (req, res) => {
-  const kakaoId = String(req.params.kakaoId || '').trim();
-  if (!kakaoId) return res.status(400).json({ error: 'kakaoId 필요' });
+// ── 네이버 로그인 ──
+const NAVER_REDIRECT_URI = 'https://daengdaengroad-production.up.railway.app/auth/naver/callback';
+const NAVER_LOGIN_CLIENT_ID = process.env.NAVER_LOGIN_CLIENT_ID;
+const NAVER_LOGIN_CLIENT_SECRET = process.env.NAVER_LOGIN_CLIENT_SECRET;
 
+app.get('/auth/naver', (req, res) => {
+  const state = Math.random().toString(36).substring(2);
+  const url = `https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id=${NAVER_LOGIN_CLIENT_ID}&redirect_uri=${encodeURIComponent(NAVER_REDIRECT_URI)}&state=${state}`;
+  res.redirect(url);
+});
+
+app.get('/auth/naver/callback', async (req, res) => {
+  const { code, state } = req.query;
+  if (!code) return res.redirect('/?error=no_code');
   try {
-    if (mongoose.connection.readyState === 1) {
-      const user = await User.findOne({ kakaoId }).lean();
-      if (!user) {
-        return res.json({
-          success: true,
-          user: {
-            kakaoId,
-            nickname: '댕댕이 집사',
-            profileImage: '',
-            dogName: '',
-            dogBreed: '',
-            dogSize: 'small',
-            dogPhoto: ''
-          }
-        });
-      }
-      return res.json({ success: true, user: buildSafeClientUser(user), dogPhoto: user.dogPhoto || '' });
-    }
-
-    return res.json({
-      success: true,
-      user: {
-        kakaoId,
-        nickname: '댕댕이 집사',
-        profileImage: '',
-        dogName: '',
-        dogBreed: '',
-        dogSize: 'small',
-        dogPhoto: ''
-      }
+    const tokenRes = await axios.post('https://nid.naver.com/oauth2.0/token', null, {
+      params: { grant_type: 'authorization_code', client_id: NAVER_LOGIN_CLIENT_ID, client_secret: NAVER_LOGIN_CLIENT_SECRET, code, state },
+      timeout: 5000
     });
+    const accessToken = tokenRes.data.access_token;
+    const userRes = await axios.get('https://openapi.naver.com/v1/nid/me', {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+    const naverUser = userRes.data.response;
+    const userId = 'naver_' + naverUser.id;
+    const nickname = naverUser.nickname || naverUser.name || '댕댕이 집사';
+    const profileImage = naverUser.profile_image || '';
+
+    let user = null;
+    if (mongoose.connection.readyState === 1) {
+      user = await User.findOneAndUpdate(
+        { kakaoId: userId },
+        { kakaoId: userId, nickname, profileImage, updatedAt: new Date() },
+        { upsert: true, new: true }
+      );
+    }
+    const userInfo = encodeURIComponent(JSON.stringify({
+      kakaoId: userId, nickname, profileImage,
+      dogName: user?.dogName || '', dogBreed: user?.dogBreed || '',
+      dogSize: user?.dogSize || 'small'
+    }));
+    res.redirect(`/?login=success&user=${userInfo}`);
   } catch (e) {
-    console.error('유저 조회 오류:', e.message);
-    res.status(500).json({ error: '유저 정보 조회 실패' });
+    console.error('네이버 로그인 오류:', e.message);
+    res.redirect('/?error=login_failed');
+  }
+});
+
+// ── 구글 로그인 ──
+const GOOGLE_REDIRECT_URI = 'https://daengdaengroad-production.up.railway.app/auth/google/callback';
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
+
+app.get('/auth/google', (req, res) => {
+  const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(GOOGLE_REDIRECT_URI)}&response_type=code&scope=profile&access_type=offline`;
+  res.redirect(url);
+});
+
+app.get('/auth/google/callback', async (req, res) => {
+  const { code } = req.query;
+  if (!code) return res.redirect('/?error=no_code');
+  try {
+    const tokenRes = await axios.post('https://oauth2.googleapis.com/token', {
+      code, client_id: GOOGLE_CLIENT_ID, client_secret: GOOGLE_CLIENT_SECRET,
+      redirect_uri: GOOGLE_REDIRECT_URI, grant_type: 'authorization_code'
+    }, { timeout: 5000 });
+    const accessToken = tokenRes.data.access_token;
+    const userRes = await axios.get('https://www.googleapis.com/oauth2/v2/userinfo', {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+    const googleUser = userRes.data;
+    const userId = 'google_' + googleUser.id;
+    const nickname = googleUser.name || '댕댕이 집사';
+    const profileImage = googleUser.picture || '';
+
+    let user = null;
+    if (mongoose.connection.readyState === 1) {
+      user = await User.findOneAndUpdate(
+        { kakaoId: userId },
+        { kakaoId: userId, nickname, profileImage, updatedAt: new Date() },
+        { upsert: true, new: true }
+      );
+    }
+    const userInfo = encodeURIComponent(JSON.stringify({
+      kakaoId: userId, nickname, profileImage,
+      dogName: user?.dogName || '', dogBreed: user?.dogBreed || '',
+      dogSize: user?.dogSize || 'small'
+    }));
+    res.redirect(`/?login=success&user=${userInfo}`);
+  } catch (e) {
+    console.error('구글 로그인 오류:', e.message);
+    res.redirect('/?error=login_failed');
   }
 });
 
