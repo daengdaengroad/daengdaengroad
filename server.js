@@ -89,6 +89,7 @@ function getGroqKey() {
 const NAVER_CLIENT_ID = process.env.NAVER_CLIENT_ID;
 const NAVER_CLIENT_SECRET = process.env.NAVER_CLIENT_SECRET;
 const TOUR_API_KEY = process.env.TOUR_API_KEY;
+const OPENWEATHER_API_KEY = process.env.OPENWEATHER_API_KEY;
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 
 // ── 활동 유형별 검색 키워드 & 반경 ──
