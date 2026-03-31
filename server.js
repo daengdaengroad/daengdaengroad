@@ -666,9 +666,14 @@ app.post('/api/generate-course', async (req, res) => {
     }
 
     // 카페/식당/공원 각 풀에서 상위 15개씩 사용
-    const cafePool = cafeMerged.slice(0, 15);
-    const restPool = restaurantMerged.slice(0, 15);
-    const parkPool = parkMerged.slice(0, 15);
+    const prevPlaceNames = new Set(req.body.prevPlaceNames || []);
+    const filterPrev = arr => prevPlaceNames.size > 0
+      ? arr.filter(p => !prevPlaceNames.has(p.name))
+      : arr;
+
+    const cafePool = filterPrev(cafeMerged).slice(0, 15);
+    const restPool = filterPrev(restaurantMerged).slice(0, 15);
+    const parkPool = filterPrev(parkMerged).slice(0, 15);
 
     // 코스 1: cafe[0] + rest[0] + park[0] (최적 조합 탐색)
     // 코스 2: cafe[1] + rest[1] + park[1] (완전 다른 업체)
