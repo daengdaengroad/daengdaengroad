@@ -150,6 +150,19 @@ async function searchKakaoPlaces(keyword, lat, lng, radius) {
   }
 }
 
+// 카카오 장소 상세 정보 (반려동물 태그 확인)
+async function checkKakaoPetTag(placeId) {
+  try {
+    const res = await axios.get(`https://place.map.kakao.com/main/v/${placeId}`, {
+      headers: { 'Referer': 'https://map.kakao.com', 'User-Agent': 'Mozilla/5.0' },
+      timeout: 3000
+    });
+    const data = res.data;
+    const tags = JSON.stringify(data).toLowerCase();
+    return tags.includes('반려') || tags.includes('애견') || tags.includes('펫') || tags.includes('pet');
+  } catch { return null; } // null = 확인 불가 (제외 안 함)
+}
+
 // ── 한국관광공사 반려동물 동반여행 API ──
 // KorService1 위치기반 조회 + petTourYN=Y (반려동물 동반 가능 필터)
 async function searchTourPlaces(lat, lng, radius, activityType, minKm=0) {
@@ -594,20 +607,27 @@ app.post('/api/generate-course', async (req, res) => {
       // 3. 관광공사 공식 인증 보너스
       const verifiedBonus = p.source === 'tourapi' ? 15 : 0;
 
-      // 4. 거리 점수 (가까울수록 높음, 단 minKm 이상)
+      // 4. 거리 점수
       const dist = p.distance || 0;
       const distScore = Math.max(0, 20 - dist) * 0.3;
 
       // 5. 네이버 리뷰 수 보너스
       const naverScore = Math.log((p.reviewCount||0) + 1) * 0.5;
 
-      return inAppScore + popularScore + verifiedBonus + distScore + naverScore;
+      // 6. 반려견 관련성 점수
+      const petScore = getPetRelevanceScore(p);
+
+      // 7. 전화번호 점수
+      const phoneScore = getPhoneScore(p);
+
+      return inAppScore + popularScore + verifiedBonus + distScore + naverScore + petScore + phoneScore;
     }
 
     function smartDedupSort(arr) {
       const seen = new Set();
       return arr
         .filter(p => {
+          if (!hasValidAddress(p)) return false; // 주소 없는 곳 제외
           const key = (p.name||'').replace(/\s/g,'').toLowerCase();
           if(seen.has(key)) return false;
           seen.add(key); return true;
@@ -615,10 +635,95 @@ app.post('/api/generate-course', async (req, res) => {
         .sort((a,b) => getSmartScore(b) - getSmartScore(a));
     }
 
+    // ── 엄격한 반려견 관련성 검증 ──
+    const PET_KEYWORDS = ['반려', '애견', '펫', '강아지', '도그', 'dog', 'pet', '댕댕'];
+    const CHAIN_BRAND_REGEX = /^(.+?)(점|지점|호점|센터|타워|몰|마트|파크)$/;
+
+    // 체인점 브랜드명 추출
+    function getBrandName(name) {
+      const m = name.match(CHAIN_BRAND_REGEX);
+      return m ? m[1] : name;
+    }
+
+    // 반려견 관련성 점수 (0~30)
+    function getPetRelevanceScore(p) {
+      const name = (p.name || '').toLowerCase();
+      const category = (p.category || '').toLowerCase();
+      const combined = name + ' ' + category;
+
+      // 관광공사 인증 = 완전 신뢰
+      if (p.source === 'tourapi') return 30;
+
+      // 업체명에 반려견 키워드 있으면 높은 점수
+      if (PET_KEYWORDS.some(k => combined.includes(k))) return 25;
+
+      // 카카오 카테고리에 반려동물 관련 태그 있으면
+      if (category.includes('반려') || category.includes('애견') || category.includes('펫')) return 20;
+
+      // 키워드 검색으로 나온 결과 (이미 애견 관련 키워드로 검색됨) = 기본 신뢰
+      return 10;
+    }
+
+    // 코스 방향성 체크 (장소들이 왔다갔다 하지 않는지)
+    function isDirectionalCourse(places) {
+      if (places.length < 3) return true;
+      // 출발지 기준 각도 계산 - 방향이 크게 바뀌면 false
+      const angles = places.map(p => Math.atan2(p.lat - lat, p.lng - lng) * 180 / Math.PI);
+      const maxAngleDiff = Math.max(...angles) - Math.min(...angles);
+      return maxAngleDiff <= 180; // 180도 이상 벌어지면 왔다갔다
+    }
+
+    // 같은 브랜드 체인점 코스 내 중복 제거
+    function hasBrandDuplicate(cafe, rest, park) {
+      const brands = [cafe, rest, park].map(p => getBrandName(p.name));
+      return new Set(brands).size < brands.length;
+    }
+
+    // 전화번호 없는 곳 패널티 (폐업 가능성)
+    function getPhoneScore(p) {
+      return (p.phone && p.phone.trim()) ? 5 : -5;
+    }
+
+    // 주소 없는 곳 제외
+    function hasValidAddress(p) {
+      return !!(p.address && p.address.trim().length > 3);
+    }
+
     // DB와 실시간 검색 결과 병합
-    const cafeMerged = smartDedupSort(mergeWithDB(cafePlaces, 'cafe')).slice(0, 30);
-    const restaurantMerged = smartDedupSort(mergeWithDB(restaurantPlaces, 'restaurant')).slice(0, 30);
-    const parkMerged = smartDedupSort(mergeWithDB(parkPlaces, 'park')).slice(0, 30);
+    // 카테고리 교차 오염 제거 - 카페풀에서 식당성 키워드 제거
+    const restaurantWords = ['식당', '파스타', '레스토랑', '고깃집', '삼겹', '치킨', '족발', '국밥', '순대', '곱창', '돈까스', '피자', '버거', '햄버거', '분식', '냉면', '우동', '라멘', '초밥', '스시'];
+
+    const cafeMergedFiltered = smartDedupSort(mergeWithDB(cafePlaces, 'cafe'))
+      .filter(p => !restaurantWords.some(w => p.name.toLowerCase().includes(w)))
+      .slice(0, 30);
+    const restaurantMergedFiltered = smartDedupSort(mergeWithDB(restaurantPlaces, 'restaurant'))
+      .slice(0, 30);
+    const parkMergedFiltered = smartDedupSort(mergeWithDB(parkPlaces, 'park'))
+      .slice(0, 30);
+
+    // 카카오 상세 태그 확인 (상위 10개만 - 속도 유지)
+    async function verifyTopCandidates(arr) {
+      const top10 = arr.slice(0, 10);
+      await Promise.all(top10.map(async p => {
+        if (p.id || p.place_id) {
+          const hasPetTag = await checkKakaoPetTag(p.id || p.place_id);
+          if (hasPetTag === true) p.petTagVerified = true;
+          if (hasPetTag === false) p.petTagVerified = false;
+        }
+      }));
+      // 태그 확인 결과 반영: false면 제일 뒤로
+      return arr.sort((a, b) => {
+        if (a.petTagVerified === false && b.petTagVerified !== false) return 1;
+        if (b.petTagVerified === false && a.petTagVerified !== false) return -1;
+        return getSmartScore(b) - getSmartScore(a);
+      });
+    }
+
+    const [cafeMerged, restaurantMerged, parkMerged] = await Promise.all([
+      verifyTopCandidates(cafeMergedFiltered),
+      verifyTopCandidates(restaurantMergedFiltered),
+      verifyTopCandidates(parkMergedFiltered),
+    ]);
 
     console.log('카페 상위(스마트):', cafeMerged.slice(0,3).map(p=>
       `${p.name}(점수${getSmartScore(p).toFixed(1)}, ${(p.distance||0).toFixed(1)}km)`
@@ -642,6 +747,8 @@ app.post('/api/generate-course', async (req, res) => {
         return {...park, catTag:'park'};
       });
       if (!isCoherentCourse(orderedPlaces)) return null;
+      if (!isDirectionalCourse(orderedPlaces)) return null; // 방향성 체크
+      if (hasBrandDuplicate(cafe, rest, park)) return null; // 체인점 중복 체크
       const maxDist = orderedPlaces.reduce((m, p) => Math.max(m, p.distance||0), 0);
       const firstName = orderedPlaces[0]?.name || '';
       return {
