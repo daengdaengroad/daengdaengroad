@@ -689,79 +689,47 @@ let currentUser=null;
 let currentActivity='애견카페';
 const SERVER = window.location.origin.includes('localhost') ? 'http://localhost:3000' : 'https://daengdaengroad-production.up.railway.app';
 
-window.addEventListener('load', async ()=>{
-  // 카카오 로그인 콜백 처리
+window.addEventListener('load',()=>{
   const params = new URLSearchParams(window.location.search);
-
   if (params.get('login') === 'success') {
-    const kakaoId = params.get('kakaoId');
-
-    if (!kakaoId) {
-      showToast('로그인 정보가 올바르지 않아요');
-      window.history.replaceState({}, '', '/');
-      return;
-    }
-
     try {
-      const res = await fetch(SERVER + '/api/user/' + encodeURIComponent(kakaoId));
-      const data = await res.json();
-      const user = data.user;
-
-      if (!user) {
-        showToast('로그인 정보를 가져오지 못했어요');
-        window.history.replaceState({}, '', '/');
-        return;
-      }
+      const user = JSON.parse(decodeURIComponent(params.get('user') || '{}'));
+      if (!user || !user.kakaoId) throw new Error('no user');
 
       currentUser = user;
-
       const p = {
         name: user.dogName || user.nickname || '초코',
         breed: user.dogBreed || '말티즈',
         size: user.dogSize || 'small',
-        photo: user.dogPhoto || null,
+        photo: loadProfile()?.photo || null,
         kakaoId: user.kakaoId,
         nickname: user.nickname,
         profileImage: user.profileImage
       };
-
       saveProfile(p);
       applyProfile(p);
-
       document.getElementById('bottomTab').style.display = 'flex';
       document.getElementById('chatBtn').style.display = 'flex';
       window.history.replaceState({}, '', '/');
-
-      if (user.dogName) {
-        goPage('main');
-      } else {
-        goPage('doginfo');
-      }
-
-      showToast(`🐾 ${user.nickname || '집사'}님 환영해요!`);
-    } catch (e) {
+      if (user.dogName) { goPage('main'); } else { goPage('doginfo'); }
+      showToast(`🐾 ${user.nickname}님 환영해요!`);
+    } catch(e) {
       showToast('로그인 정보를 가져오지 못했어요');
       window.history.replaceState({}, '', '/');
     }
-
-    getLocation();
     return;
   }
-
   if (params.get('error')) {
     showToast('로그인에 실패했어요. 다시 시도해주세요.');
     window.history.replaceState({}, '', '/');
   }
-
   // 카카오 로그인한 유저만 통과 (kakaoId 없으면 로그인 화면)
   const saved = loadProfile();
   if (saved && saved.kakaoId) {
     applyProfile(saved);
-    document.getElementById('bottomTab').style.display = 'flex';
-    document.getElementById('chatBtn').style.display = 'flex';
+    document.getElementById('bottomTab').style.display='flex';document.getElementById('chatBtn').style.display='flex';
     goPage('main');
   }
-
   // kakaoId 없으면 로그인 페이지 유지
   getLocation();
 });
@@ -1985,5 +1953,28 @@ if ('serviceWorker' in navigator) {
   });
 }
 </script>
+<script>
+if (location.search.includes('login=success')) {
+  fetch('/api/me')
+    .then(res => res.json())
+    .then(data => {
+      console.log('로그인 사용자:', data.user);
+    });
+}
+</script>
 </body>
+<script>
+if (location.search.includes('login=success')) {
+  fetch('/api/me')
+    .then(res => res.json())
+    .then(data => {
+      console.log('로그인 사용자:', data.user);
+
+      // 테스트용 알림 (확인용)
+      if (data.user) {
+        alert(data.user.nickname + ' 로그인 성공!');
+      }
+    });
+}
+</script>
 </html>
