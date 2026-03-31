@@ -94,9 +94,11 @@ body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(145deg,#E8
 .location-manual-label{font-size:11px;color:var(--gray-lt);flex-shrink:0}
 /* 무드 버튼 */
 .mood-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.mood-btn{padding:12px 10px;background:var(--white);border:1.5px solid var(--gray-lt);border-radius:var(--radius);cursor:pointer;transition:all .25s;text-align:center;box-shadow:var(--shadow-sm)}
+.mood-btn{padding:12px 10px;background:var(--white);border:2px solid var(--gray-lt);border-radius:var(--radius);cursor:pointer;transition:all .25s;text-align:center;box-shadow:var(--shadow-sm)}
 .mood-btn:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
-.mood-btn.selected{background:linear-gradient(135deg,var(--amber),#CF8B1A);border-color:transparent;box-shadow:0 6px 20px rgba(186,117,23,.4);transform:translateY(-2px)}
+.mood-btn.selected{border:3px solid var(--amber);box-shadow:0 6px 20px rgba(186,117,23,.5);transform:translateY(-2px)}
+.mood-btn.selected::after{content:'✓ 선택됨';position:absolute;top:8px;right:8px;background:var(--amber);color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:20px;font-family:'Noto Sans KR',sans-serif}
+.mood-btn{position:relative}
 .mood-btn .mood-emoji{font-size:28px;margin-bottom:6px}
 .mood-btn .mood-label{font-size:13px;font-weight:700;color:var(--brown-md);line-height:1.3}
 .mood-btn.selected .mood-label{color:#fff}
@@ -105,9 +107,10 @@ body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(145deg,#E8
 .mood-btn:not(.selected) .mood-label{color:var(--brown-md)}
 /* 거리 버튼 */
 .duration-row{display:flex;gap:10px}
-.duration-btn{flex:1;padding:14px 6px;background:var(--white);border:1.5px solid var(--gray-lt);border-radius:var(--radius-sm);font-size:13px;font-weight:600;color:var(--gray);font-family:'Noto Sans KR',sans-serif;cursor:pointer;transition:all .25s;text-align:center;line-height:1.5;box-shadow:var(--shadow-sm)}
+.duration-btn{flex:1;padding:14px 6px;background:var(--white);border:2px solid var(--gray-lt);border-radius:var(--radius-sm);font-size:13px;font-weight:600;color:var(--gray);font-family:'Noto Sans KR',sans-serif;cursor:pointer;transition:all .25s;text-align:center;line-height:1.5;box-shadow:var(--shadow-sm);position:relative}
 .duration-btn:hover{transform:translateY(-1px);box-shadow:var(--shadow-md)}
-.duration-btn.selected{background:linear-gradient(135deg,var(--amber),#CF8B1A);border-color:transparent;color:#fff;box-shadow:0 4px 16px rgba(186,117,23,.4);transform:translateY(-1px)}
+.duration-btn.selected{border:3px solid var(--amber);box-shadow:0 4px 16px rgba(186,117,23,.5);transform:translateY(-2px)}
+.duration-btn.selected::after{content:'✓';position:absolute;top:8px;right:8px;background:var(--amber);color:#fff;font-size:11px;font-weight:900;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;line-height:20px}
 /* 결과 헤더 */
 .result-header{padding:20px 24px 14px;background:var(--amber-lt)}
 .back-btn{font-size:13px;color:var(--amber);cursor:pointer;display:flex;align-items:center;gap:5px;margin-bottom:10px;background:none;border:none;font-family:'Noto Sans KR',sans-serif;font-weight:700;letter-spacing:-.1px}
@@ -216,6 +219,12 @@ body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(145deg,#E8
 .toast{position:absolute;bottom:90px;left:50%;transform:translateX(-50%);background:rgba(35,18,2,.9);color:var(--white);padding:11px 22px;border-radius:50px;font-size:13px;font-weight:600;white-space:nowrap;z-index:400;opacity:0;transition:opacity .3s;pointer-events:none;max-width:300px;text-align:center;backdrop-filter:blur(8px);box-shadow:0 4px 16px rgba(0,0,0,.2)}
 .toast.show{opacity:1}
 </style>
+<!-- Mixpanel -->
+<script type="text/javascript">
+(function(f,b){if(!b.__SV){var e,g,i,h;window.mixpanel=b;b._i=[];b.init=function(e,f,c){function g(a,d){var b=d.split(".");2==b.length&&(a=a[b[0]],d=b[1]);a[d]=function(){a.push([d].concat(Array.prototype.slice.call(arguments,0)))}}var a=b;"undefined"!==typeof c?a=b[c]=[]:c="mixpanel";a.people=a.people||[];a.toString=function(a){var d="mixpanel";"mixpanel"!==c&&(d+="."+c);a||(d+=" (stub)");return d};a.people.toString=function(){return a.toString(1)+".people (stub)"};i="disable time_event track track_pageview track_links track_forms track_with_groups add_group set_group remove_group register register_once alias unregister identify name_tag set_config reset opt_in_tracking opt_out_tracking has_opted_in_tracking has_opted_out_tracking clear_opt_in_out_tracking start_batch_senders people.set people.set_once people.unset people.increment people.append people.union people.track_charge people.clear_charges people.delete_user people.remove".split(" ");
+for(h=0;h<i.length;h++)g(a,i[h]);var j="set set_once union unset remove delete".split(" ");a.get_group=function(){function b(c){d[c]=function(){call2_args=arguments;call2=[c].concat(Array.prototype.slice.call(call2_args,0));a.push([e].concat(call2))}}for(var d={},e=["get_group"].concat(Array.prototype.slice.call(arguments,0)),c=0;c<j.length;c++)b(j[c]);return d};b._i.push([e,f,c])};b.__SV=1.2;e=f.createElement("script");e.type="text/javascript";e.async=!0;e.src="undefined"!==typeof MIXPANEL_CUSTOM_LIB_URL?MIXPANEL_CUSTOM_LIB_URL:"file:"===f.location.protocol&&"//cdn.mxpnl.com/libs/mixpanel-2-latest.min.js".match(/^\/\//)?"https://cdn.mxpnl.com/libs/mixpanel-2-latest.min.js":"//cdn.mxpnl.com/libs/mixpanel-2-latest.min.js";g=f.getElementsByTagName("script")[0];g.parentNode.insertBefore(e,g)}})(document,window.mixpanel||[]);
+mixpanel.init('8bf2ba0e82bef45f22121e1f8a2fb1b0', {track_pageview: true, persistence: 'localStorage'});
+</script>
 </head>
 <body>
 <div class="phone">
@@ -686,6 +695,19 @@ window.addEventListener('load',()=>{
       window.history.replaceState({}, '', '/');
       if (user.dogName) { goPage('main'); } else { goPage('doginfo'); }
       showToast(`🐾 ${user.nickname}님 환영해요!`);
+      // Mixpanel 유저 식별 및 로그인 트래킹
+      if (window.mixpanel) {
+        mixpanel.identify(user.kakaoId);
+        mixpanel.people.set({
+          '$name': user.nickname,
+          'dog_name': user.dogName || '',
+          'dog_breed': user.dogBreed || '',
+          'dog_size': user.dogSize || 'small',
+          'login_type': user.kakaoId?.startsWith('naver_') ? 'naver' : user.kakaoId?.startsWith('google_') ? 'google' : 'kakao',
+          '$last_login': new Date().toISOString()
+        });
+        mixpanel.track('login', { method: user.kakaoId?.startsWith('naver_') ? 'naver' : user.kakaoId?.startsWith('google_') ? 'google' : 'kakao' });
+      }
     } catch(e) {
       showToast('로그인 정보를 가져오지 못했어요');
       window.history.replaceState({}, '', '/');
@@ -969,6 +991,11 @@ async function generateCourse(){
     document.getElementById('loadingOverlay').classList.remove('show');
     renderCourses(data.courses,profile.name,activity,duration);
     goPage('result');
+    // Mixpanel 코스 생성 트래킹
+    if (window.mixpanel) mixpanel.track('course_generate', {
+      activity, duration, location: currentLocation,
+      radius_km: currentRadius/1000
+    });
   }catch(e){
     clearInterval(stepTimer);
     document.getElementById('loadingOverlay').classList.remove('show');
@@ -1016,6 +1043,7 @@ function refreshCourse() {
     }, 1000);
   }
   window._forceRefresh = true;
+  if (window.mixpanel) mixpanel.track('course_refresh', { location: currentLocation });
   generateCourse();
 }
 
@@ -1349,6 +1377,7 @@ function saveVaccine() {
   saveVaccines(vaccines);
   document.getElementById('vaccineModal').classList.remove('show');
   renderVaccineList();
+  if (window.mixpanel) mixpanel.track('vaccine_add', { type, mode: editingVaccineIndex >= 0 ? 'edit' : 'new' });
 }
 function deleteVaccine(i) {
   const vaccines = getVaccines();
@@ -1405,9 +1434,11 @@ function saveCourse(course) {
   if(exists>=0){
     saved.splice(exists,1);
     showToast('저장이 해제됐어요');
+    if (window.mixpanel) mixpanel.track('course_unsave', { course_title: course.title });
   } else {
     saved.unshift({...course, savedAt: new Date().toLocaleDateString('ko-KR')});
     showToast('코스가 저장됐어요 ❤️');
+    if (window.mixpanel) mixpanel.track('course_save', { course_title: course.title, places: course.places?.map(p=>p.name) });
   }
   localStorage.setItem('savedCourses', JSON.stringify(saved));
   // 결과 화면 하트 업데이트
@@ -1659,6 +1690,7 @@ async function submitReview() {
     document.querySelectorAll('.star-btn').forEach(b=>b.classList.remove('on'));
     renderReviews(currentReviewPlaceId);
     showToast('후기가 등록됐어요 &#x1F43E;');
+    if (window.mixpanel) mixpanel.track('review_submit', { place: currentReviewPlace, stars: currentStars });
   } catch {
     showToast('후기 저장 실패. 서버 연결을 확인해주세요');
   }
@@ -1826,12 +1858,7 @@ function showDetail(idx){
   const c=window._courses?.[idx];if(!c)return;
   window._currentDetailCourse=c;
   showDetailCourse(c);
-}
-
-function showDetail(idx){
-  const c=window._courses?.[idx];if(!c)return;
-  window._currentDetailCourse=c;
-  showDetailCourse(c);
+  if (window.mixpanel) mixpanel.track('detail_view', { course_title: c.title, places: c.places?.map(p=>p.name) });
 }
 </script>
 <script>
