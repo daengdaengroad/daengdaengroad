@@ -625,139 +625,124 @@ app.post('/api/generate-course', async (req, res) => {
     ));
     console.log(`카테고리별: 카페${cafeMerged.length}개 식당${restaurantMerged.length}개 공원${parkMerged.length}개`);
 
-    // ── 코스 조합 (카페/식당/공원 각 1개씩, 절대 중복 없음) ──
-    const bycat = {
-      cafe: cafeMerged.slice(),
-      restaurant: restaurantMerged.slice(),
-      park: parkMerged.slice()
-    };
-
-    // 코스 간 장소 거리 최적화 (코스 내 장소들이 서로 15km 이내)
+    // ── 코스 3개 조합: 카페/식당/공원 각각 완전히 다른 업체 ──
     function isCoherentCourse(places) {
       if (places.length < 2) return true;
       for (let i = 0; i < places.length - 1; i++) {
         const d = calcDistance(places[i].lat, places[i].lng, places[i+1].lat, places[i+1].lng);
-        if (d > 20) return false; // 장소 간 20km 이내
+        if (d > 20) return false;
       }
       return true;
     }
 
-    const builtCourses = [];
-    const usedCombos = new Set();
-
-    // 상위 점수 장소 위주로 코스 조합 (최대 30개)
-    const maxCourses = 30;
-    const cafePool = bycat.cafe.slice();
-    const restPool = bycat.restaurant.slice();
-    const parkPool = bycat.park.slice();
-
-    for (let ci = 0; ci < cafePool.length && builtCourses.length < maxCourses; ci++) {
-      for (let ri = 0; ri < restPool.length && builtCourses.length < maxCourses; ri++) {
-        for (let pi = 0; pi < parkPool.length && builtCourses.length < maxCourses; pi++) {
-          const cafe = cafePool[ci];
-          const rest = restPool[ri];
-          const park = parkPool[pi];
-
-          // 같은 코스 내 중복 체크
-          if (cafe.name === rest.name || cafe.name === park.name || rest.name === park.name) continue;
-
-          // 이미 사용된 조합 체크
-          const combo = [cafe.name, rest.name, park.name].sort().join('|');
-          if (usedCombos.has(combo)) continue;
-
-          // catOrder에 맞게 정렬
-          const orderedPlaces = catOrder.map(cat => {
-            if(cat==='cafe') return {...cafe, catTag:'cafe'};
-            if(cat==='restaurant') return {...rest, catTag:'restaurant'};
-            return {...park, catTag:'park'};
-          });
-
-          // 코스 일관성 체크 (장소 간 거리)
-          if (!isCoherentCourse(orderedPlaces)) continue;
-
-          usedCombos.add(combo);
-          const maxDist = orderedPlaces.reduce((m, p) => Math.max(m, p.distance||0), 0);
-          const firstName = orderedPlaces[0]?.name || '';
-
-          builtCourses.push({
-            title: `${firstName} 코스`,
-            theme: catOrder.map(c => c==='cafe'?'카페':c==='restaurant'?'식당':'공원').join('→'),
-            driveTime: calcDriveTime(maxDist),
-            driveMin: Math.round((maxDist / 50) * 60) + 20,
-            totalDistance: parseFloat(maxDist.toFixed(1)),
-            score: getSmartScore(orderedPlaces[0]),
-            places: orderedPlaces.map((p, idx) => ({
-              name: p.name,
-              address: p.address || '',
-              distance: parseFloat((p.distance||0).toFixed(1)),
-              driveTime: calcDriveTime(p.distance||0),
-              driveMin: Math.round(((p.distance||0)/80)*60),
-              phone: p.phone || '',
-              url: p.url || '',
-              lat: p.lat,
-              lng: p.lng,
-              reason: idx===0 ? `${p.name}에서 시작하는 코스` : `함께 방문하기 좋은 곳`,
-              catTag: p.catTag
-            })),
-            highlight: `${firstName}부터 시작하는 알찬 코스`
-          });
-
-          break;
-        }
-        if (builtCourses.length >= maxCourses) break;
-      }
-      if (builtCourses.length >= maxCourses) break;
+    function makeCourse(cafe, rest, park) {
+      const orderedPlaces = catOrder.map(cat => {
+        if(cat==='cafe') return {...cafe, catTag:'cafe'};
+        if(cat==='restaurant') return {...rest, catTag:'restaurant'};
+        return {...park, catTag:'park'};
+      });
+      if (!isCoherentCourse(orderedPlaces)) return null;
+      const maxDist = orderedPlaces.reduce((m, p) => Math.max(m, p.distance||0), 0);
+      const firstName = orderedPlaces[0]?.name || '';
+      return {
+        title: `${firstName} 코스`,
+        theme: catOrder.map(c => c==='cafe'?'카페':c==='restaurant'?'식당':'공원').join('→'),
+        driveTime: calcDriveTime(maxDist),
+        driveMin: Math.round((maxDist / 50) * 60) + 20,
+        totalDistance: parseFloat(maxDist.toFixed(1)),
+        score: getSmartScore(orderedPlaces[0]),
+        places: orderedPlaces.map((p, idx) => ({
+          name: p.name, address: p.address || '',
+          distance: parseFloat((p.distance||0).toFixed(1)),
+          driveTime: calcDriveTime(p.distance||0),
+          driveMin: Math.round(((p.distance||0)/80)*60),
+          phone: p.phone || '', url: p.url || '',
+          lat: p.lat, lng: p.lng,
+          reason: idx===0 ? `${p.name}에서 시작하는 코스` : `함께 방문하기 좋은 곳`,
+          catTag: p.catTag
+        })),
+        highlight: `${firstName}부터 시작하는 알찬 코스`
+      };
     }
+
+    // 카페/식당/공원 각 풀에서 상위 15개씩 사용
+    const cafePool = cafeMerged.slice(0, 15);
+    const restPool = restaurantMerged.slice(0, 15);
+    const parkPool = parkMerged.slice(0, 15);
+
+    // 코스 1: cafe[0] + rest[0] + park[0] (최적 조합 탐색)
+    // 코스 2: cafe[1] + rest[1] + park[1] (완전 다른 업체)
+    // 코스 3: cafe[2] + rest[2] + park[2]
+    const final3 = [];
+    const usedCafes = new Set();
+    const usedRests = new Set();
+    const usedParks = new Set();
+
+    // 각 코스마다 사용 안 된 카페/식당/공원 조합 찾기
+    for (let attempt = 0; final3.length < 3 && attempt < cafePool.length * restPool.length; attempt++) {
+      // 사용 안 된 카페 찾기
+      const cafe = cafePool.find(p => !usedCafes.has(p.name));
+      const rest = restPool.find(p => !usedRests.has(p.name));
+      const park = parkPool.find(p => !usedParks.has(p.name));
+
+      if (!cafe || !rest || !park) break;
+
+      const course = makeCourse(cafe, rest, park);
+      if (course) {
+        final3.push(course);
+        usedCafes.add(cafe.name);
+        usedRests.add(rest.name);
+        usedParks.add(park.name);
+      } else {
+        // 거리 조건 실패 시 park 교체 시도
+        let found = false;
+        for (const altPark of parkPool) {
+          if (usedParks.has(altPark.name)) continue;
+          const c2 = makeCourse(cafe, rest, altPark);
+          if (c2) {
+            final3.push(c2);
+            usedCafes.add(cafe.name);
+            usedRests.add(rest.name);
+            usedParks.add(altPark.name);
+            found = true;
+            break;
+          }
+        }
+        if (!found) {
+          // 이 카페는 skip
+          usedCafes.add(cafe.name);
+        }
+      }
+    }
+
+    // 못 채운 경우 중복 허용
+    if (final3.length < 3) {
+      for (let ci = 0; ci < cafePool.length && final3.length < 3; ci++) {
+        for (let ri = 0; ri < restPool.length && final3.length < 3; ri++) {
+          for (let pi = 0; pi < parkPool.length && final3.length < 3; pi++) {
+            const c = makeCourse(cafePool[ci], restPool[ri], parkPool[pi]);
+            if (c && !final3.find(x => x.title === c.title)) final3.push(c);
+          }
+        }
+      }
+    }
+
+    const builtCourses = final3;
 
     if (builtCourses.length > 0) {
       builtCourses.forEach(c => {
         if (c.places?.[0]) {
-          const p = c.places[0];
-          c.placeId = p.id || '';
-          c.placeName = p.name;
+          c.placeId = c.places[0].id || '';
+          c.placeName = c.places[0].name;
         }
       });
-      console.log(`스마트 코스 조합: ${builtCourses.length}개`);
-
-      // 점수 높은 순 정렬
-      builtCourses.sort((a,b) => (b.score||0) - (a.score||0));
-
-      // forceRefresh면 캐시 무시하고 새 조합 반환
-      const prevNames = req.body.forceRefresh
-        ? new Set((req.body.prevPlaceNames || []))
-        : new Set();
-
-      // 3개 코스 선택: 코스 간 장소 완전 중복 금지
-      const final3 = [];
-      const usedInFinal = new Set();
-
-      for (const course of builtCourses) {
-        if (final3.length >= 3) break;
-        const names = course.places.map(p => p.name);
-
-        // forceRefresh면 이전에 본 장소 제외
-        if (prevNames.size > 0 && names.some(n => prevNames.has(n))) continue;
-
-        // 이미 선택된 코스와 장소 겹치면 제외
-        if (names.some(n => usedInFinal.has(n))) continue;
-
-        final3.push(course);
-        names.forEach(n => usedInFinal.add(n));
-      }
-
-      // 못 채우면 중복 허용하고 채움
-      if (final3.length < 3) {
-        for (const course of builtCourses) {
-          if (final3.length >= 3) break;
-          if (!final3.includes(course)) final3.push(course);
-        }
-      }
+      console.log(`코스 조합 완료: ${builtCourses.map(c=>c.places.map(p=>p.name).join('+')).join(' / ')}`);
 
       setToCache(cacheKey, builtCourses);
 
       // AI 코스 설명 생성 (Groq - 무료)
       try {
-        await Promise.all(final3.map(async (course) => {
+        await Promise.all(builtCourses.map(async (course) => {
           const placeNames = course.places.map(p => `${p.name}(${p.catTag==='cafe'?'카페':p.catTag==='restaurant'?'식당':'공원'})`).join(', ');
           const weatherInfo = req.body.weather || '';
           const response = await axios.post('https://api.groq.com/openai/v1/chat/completions', {
@@ -781,7 +766,7 @@ ${weatherInfo ? '날씨: '+weatherInfo : ''}
         console.error('AI 설명 생성 오류:', e.message);
       }
 
-      return res.json({ success: true, courses: final3 });
+      return res.json({ success: true, courses: builtCourses });
     }
     // ── 후기 평점 기반 정렬 ──
     const reviews = loadReviews();
