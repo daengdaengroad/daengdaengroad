@@ -222,10 +222,12 @@ body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(145deg,#E8
 <!-- Mixpanel -->
 <script src="https://cdn.mxpnl.com/libs/mixpanel-2-latest.min.js"></script>
 <script>
-  mixpanel.init('8bf2ba0e82bef45f22121e1f8a2fb1b0', {
-    track_pageview: true,
-    persistence: 'localStorage',
-    debug: true
+  window.addEventListener('DOMContentLoaded', function() {
+    mixpanel.init('8bf2ba0e82bef45f22121e1f8a2fb1b0', {
+      track_pageview: true,
+      persistence: 'localStorage',
+      debug: true
+    });
   });
 </script>
 </head>
