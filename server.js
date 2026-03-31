@@ -118,14 +118,11 @@ const ACTIVITY_CONFIG = {
 
 const DURATION_CONFIG = {
   '30분 거리':  { minKm: 0,  maxKm: 20,  driveMin: 30,  label: '차로 30분 이내' },
-  '1시간 거리': { minKm: 50, maxKm: 100, driveMin: 60,  label: '차로 1시간 이상' },
-  // 하위 호환
-  '1시간 거리': { minKm: 15, maxKm: 50,  driveMin: 60,  label: '차로 1시간 이내' },
-  '2시간 이상': { minKm: 50, maxKm: 100, driveMin: 120, label: '차로 2시간 전후' },
+  '1시간 거리': { minKm: 50, maxKm: 100, driveMin: 60,  label: '차로 1시간 전후' },
+  '2시간 이상': { minKm: 100, maxKm: 200, driveMin: 120, label: '차로 2시간 전후' },
 };
 const RADIUS_BY_DURATION = {
   '30분 거리': 20000, '1시간 거리': 100000,
-  '1시간 거리': 50000, '2시간 이상': 100000,
   '1시간': 20000, '반나절': 50000, '하루종일': 100000
 };
 
