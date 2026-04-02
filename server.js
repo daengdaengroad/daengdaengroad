@@ -1536,16 +1536,25 @@ app.post('/api/ai-review', async (req, res) => {
   if (!groqKey) return res.json({ review: null });
 
   try {
+    const styles = [
+      '짧고 핵심만 말하는 스타일. 1-2문장.',
+      '강아지 반응 위주로 쓰는 스타일. 2문장.',
+      '장소 분위기 묘사 위주. 2문장.',
+      '실용적인 팁 위주. 2문장.',
+      '감성적이고 따뜻한 스타일. 2문장.',
+    ];
+    const style = styles[Math.floor(Math.random() * styles.length)];
+
     const response = await axios.post('https://api.groq.com/openai/v1/chat/completions', {
       model: 'llama-3.3-70b-versatile',
       max_tokens: 150,
-      temperature: 0.8,
+      temperature: 1.1,
       messages: [{
         role: 'system',
         content: '너는 반려견 동반 여행 장소를 소개하는 큐레이터야. 직접 방문한 척하지 말고, 장소 특성을 중립적이고 따뜻하게 소개해줘.'
       }, {
         role: 'user',
-        content: `"${placeName}"(${category || '장소'}, ${address || ''})을 반려견 동반 장소로 2문장으로 소개해줘. "이곳은~", "~로 알려진 곳이에요", "~하기 좋은 장소예요" 같은 소개 말투로. 직접 방문한 것처럼 쓰지 말 것. 이모지 1개 포함. 한국어로.`
+        content: `"${placeName}"(${category || '장소'}, ${address || ''})을 반려견 동반 장소로 소개해줘. 스타일: ${style} "이곳은~", "~로 알려진 곳이에요", "~하기 좋은 장소예요" 같은 소개 말투로. 직접 방문한 것처럼 쓰지 말 것. 이모지 1개 포함. 한국어로.`
       }]
     }, {
       headers: {
