@@ -1637,7 +1637,7 @@ async function renderReviews(placeId) {
     const data = await res.json();
     if (!data.reviews || !data.reviews.length) {
       // AI 후기 자동 생성
-      container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--gray);font-size:13px">🤖 AI가 후기를 생성하는 중...</div>';
+      container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--gray);font-size:13px">외부 후기 불러오는 중...</div>';
       document.getElementById('reviewSummaryBox').style.display = 'none';
       try {
         const placeName = document.getElementById('reviewPlaceName')?.textContent || '';
