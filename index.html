@@ -1770,7 +1770,7 @@ function showDetailCourse(c) {
         </div>
         <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">
           ${p.url?`<a href="${p.url}" target="_blank" style="font-size:10px;color:var(--teal);font-weight:700;text-decoration:none">지도&#x2192;</a>`:''}
-          <button onclick="openReview('${p.name.replace(/'/g,"\\'")}', '${(p.id||p.name).replace(/'/g,"\\'")}', '${(p.category||'').replace(/'/g,"\\'")}', '${(p.address||'').replace(/'/g,"\\'")}'" style="font-size:10px;color:var(--amber);font-weight:700;background:var(--amber-lt);border:none;border-radius:8px;padding:3px 8px;cursor:pointer">후기</button>
+          <button class="review-open-btn" data-name="${p.name.replace(/"/g,'&quot;')}" data-id="${(p.id||p.name).replace(/"/g,'&quot;')}" data-category="${(p.category||'').replace(/"/g,'&quot;')}" data-address="${(p.address||'').replace(/"/g,'&quot;')}" style="font-size:10px;color:var(--amber);font-weight:700;background:var(--amber-lt);border:none;border-radius:8px;padding:3px 8px;cursor:pointer">후기</button>
         </div>
       </div>
     `}).join('')}
@@ -1891,6 +1891,17 @@ function openMapFull() {
   const url = window._currentMapUrl;
   if (url) window.open(url, '_blank');
 }
+
+// 후기 버튼 이벤트 위임 (이스케이프 문제 방지)
+document.addEventListener('click', function(e) {
+  const btn = e.target.closest('.review-open-btn');
+  if (!btn) return;
+  const name = btn.dataset.name;
+  const id = btn.dataset.id;
+  const category = btn.dataset.category;
+  const address = btn.dataset.address;
+  openReview(name, id, category, address);
+});
 function showDetail(idx){
   const c=window._courses?.[idx];if(!c)return;
   window._currentDetailCourse=c;
