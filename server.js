@@ -617,7 +617,10 @@ app.post('/api/generate-course', async (req, res) => {
       // 7. 전화번호 점수
       const phoneScore = getPhoneScore(p);
 
-      return inAppScore + popularScore + verifiedBonus + distScore + naverScore + petScore + phoneScore;
+      // 8. 랜덤 노이즈 (상위 20개 안에서 순서 섞기)
+      const randomNoise = Math.random() * 25;
+
+      return inAppScore + popularScore + verifiedBonus + distScore + naverScore + petScore + phoneScore + randomNoise;
     }
 
     function smartDedupSort(arr) {
