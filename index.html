@@ -1607,11 +1607,13 @@ function showDetailFromSaved(idx) {
 // ── 후기 기능 (서버 연동) ──
 let currentReviewPlace = null;
 let currentReviewPlaceId = null;
+let currentReviewPlaceMeta = {};
 let currentStars = 0;
 
-function openReview(placeName, placeId) {
+function openReview(placeName, placeId, category, address) {
   currentReviewPlace = placeName;
   currentReviewPlaceId = placeId || placeName;
+  currentReviewPlaceMeta = { category: category || '', address: address || '' };
   currentStars = 0;
   document.getElementById('reviewPlaceName').textContent = placeName;
   document.getElementById('reviewText').value = '';
@@ -1634,8 +1636,42 @@ async function renderReviews(placeId) {
     if (!res.ok) throw new Error('서버 오류 ' + res.status);
     const data = await res.json();
     if (!data.reviews || !data.reviews.length) {
-      container.innerHTML = '<div style="text-align:center;padding:24px 20px"><div style="font-size:32px;margin-bottom:8px">&#x1F43E;</div><div style="font-size:13px;color:var(--gray);font-weight:600">아직 후기가 없어요</div><div style="font-size:11px;color:var(--gray-lt);margin-top:4px">첫 후기를 남겨보세요!</div></div>';
+      // AI 후기 자동 생성
+      container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--gray);font-size:13px">🤖 AI가 후기를 생성하는 중...</div>';
       document.getElementById('reviewSummaryBox').style.display = 'none';
+      try {
+        const placeName = document.getElementById('reviewPlaceName')?.textContent || '';
+        const aiRes = await fetch(`${SERVER}/api/ai-review`, {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({
+            placeName,
+            category: currentReviewPlaceMeta?.category || '',
+            address: currentReviewPlaceMeta?.address || ''
+          })
+        });
+        const aiData = await aiRes.json();
+        if (aiData.review) {
+          container.innerHTML = `
+            <div style="background:linear-gradient(135deg,var(--teal-lt),#f0faf6);border:1px solid var(--teal);border-radius:var(--radius);padding:14px 16px;margin-bottom:12px">
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+                <span style="font-size:16px">🤖</span>
+                <span style="font-size:11px;font-weight:700;color:var(--teal);letter-spacing:.5px">AI 추천 한마디</span>
+              </div>
+              <div style="font-size:13px;color:var(--brown-md);line-height:1.7;font-weight:500">${aiData.review}</div>
+            </div>
+            <div style="text-align:center;padding:16px 20px">
+              <div style="font-size:28px;margin-bottom:8px">🐾</div>
+              <div style="font-size:13px;color:var(--gray);font-weight:600">아직 후기가 없어요</div>
+              <div style="font-size:11px;color:var(--gray-lt);margin-top:4px">첫 후기를 남겨보세요!</div>
+            </div>
+          `;
+        } else {
+          container.innerHTML = '<div style="text-align:center;padding:24px 20px"><div style="font-size:32px;margin-bottom:8px">🐾</div><div style="font-size:13px;color:var(--gray);font-weight:600">아직 후기가 없어요</div><div style="font-size:11px;color:var(--gray-lt);margin-top:4px">첫 후기를 남겨보세요!</div></div>';
+        }
+      } catch(e) {
+        container.innerHTML = '<div style="text-align:center;padding:24px 20px"><div style="font-size:32px;margin-bottom:8px">🐾</div><div style="font-size:13px;color:var(--gray);font-weight:600">아직 후기가 없어요</div><div style="font-size:11px;color:var(--gray-lt);margin-top:4px">첫 후기를 남겨보세요!</div></div>';
+      }
       return;
     }
     // AI 리뷰 요약 호출
@@ -1734,7 +1770,7 @@ function showDetailCourse(c) {
         </div>
         <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">
           ${p.url?`<a href="${p.url}" target="_blank" style="font-size:10px;color:var(--teal);font-weight:700;text-decoration:none">지도&#x2192;</a>`:''}
-          <button onclick="openReview('${p.name.replace(/'/g,"\'")}')" style="font-size:10px;color:var(--amber);font-weight:700;background:var(--amber-lt);border:none;border-radius:8px;padding:3px 8px;cursor:pointer">후기</button>
+          <button onclick="openReview('${p.name.replace(/'/g,"\\'")}', '${(p.id||p.name).replace(/'/g,"\\'")}', '${(p.category||'').replace(/'/g,"\\'")}', '${(p.address||'').replace(/'/g,"\\'")}'" style="font-size:10px;color:var(--amber);font-weight:700;background:var(--amber-lt);border:none;border-radius:8px;padding:3px 8px;cursor:pointer">후기</button>
         </div>
       </div>
     `}).join('')}

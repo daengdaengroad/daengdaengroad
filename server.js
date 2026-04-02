@@ -1527,6 +1527,43 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
+// ── AI 장소 후기 자동 생성 (Groq) ──
+app.post('/api/ai-review', async (req, res) => {
+  const { placeName, category, address } = req.body;
+  if (!placeName) return res.status(400).json({ error: '장소명 필요' });
+
+  const groqKey = getGroqKey();
+  if (!groqKey) return res.json({ review: null });
+
+  try {
+    const response = await axios.post('https://api.groq.com/openai/v1/chat/completions', {
+      model: 'llama-3.3-70b-versatile',
+      max_tokens: 150,
+      temperature: 0.8,
+      messages: [{
+        role: 'system',
+        content: '너는 반려견과 함께 전국을 여행하는 따뜻한 감성의 견주야. 방문한 장소에 대한 솔직하고 감성적인 후기를 써줘.'
+      }, {
+        role: 'user',
+        content: `"${placeName}"(${category || '장소'}, ${address || ''})에 반려견이랑 다녀온 후기를 2문장으로 써줘. 이모지 1개 포함. 한국어로. 실제 방문한 것처럼 자연스럽게. 장소 특성에 맞게 구체적으로.`
+      }]
+    }, {
+      headers: {
+        'Authorization': `Bearer ${groqKey}`,
+        'Content-Type': 'application/json'
+      },
+      timeout: 8000
+    });
+
+    const review = response.data.choices[0]?.message?.content?.trim() || null;
+    console.log(`AI 후기 생성 [${placeName}]: ${review}`);
+    res.json({ review });
+  } catch (e) {
+    console.error('Groq AI 후기 오류:', e.message);
+    res.json({ review: null });
+  }
+});
+
 // ── 헬스체크 ──
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', message: '댕댕로드 서버 정상 작동 중 🐾' });
