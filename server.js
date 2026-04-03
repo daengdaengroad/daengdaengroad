@@ -904,13 +904,26 @@ ${weatherInfo ? '날씨: '+weatherInfo : ''}
       `${p.name}(★${p.avgRating.toFixed(1)},후기${p.reviewCount}개,${(p.distance||0).toFixed(1)}km)`
     ));
 
-    // 장소 데이터 극도로 압축 (토큰 최소화)
-    const compactPlaces = scoredPlaces.map(p => ({
+    // 장소 데이터 극도로 압축 (토큰 최소화) - 카테고리별로 분리해서 넘김
+    const cafePlacesCompact = scoredPlaces.filter(p => p.catTag === 'cafe').slice(0, 8).map(p => ({
       n: p.name,
       a: (p.address||'').replace('경기도','경기').replace('서울특별시','서울').split(' ').slice(0,4).join(' '),
       d: parseFloat((p.distance||0).toFixed(1)),
-      t: p.catTag||'park'  // cafe/restaurant/park
+      t: 'cafe'
     }));
+    const restaurantPlacesCompact = scoredPlaces.filter(p => p.catTag === 'restaurant').slice(0, 8).map(p => ({
+      n: p.name,
+      a: (p.address||'').replace('경기도','경기').replace('서울특별시','서울').split(' ').slice(0,4).join(' '),
+      d: parseFloat((p.distance||0).toFixed(1)),
+      t: 'restaurant'
+    }));
+    const parkPlacesCompact = scoredPlaces.filter(p => p.catTag === 'park').slice(0, 8).map(p => ({
+      n: p.name,
+      a: (p.address||'').replace('경기도','경기').replace('서울특별시','서울').split(' ').slice(0,4).join(' '),
+      d: parseFloat((p.distance||0).toFixed(1)),
+      t: 'park'
+    }));
+    const compactPlaces = [...cafePlacesCompact, ...restaurantPlacesCompact, ...parkPlacesCompact];
 
     // 규칙을 한줄로 압축
     // 드라이브 시간 = 거리(km) / 60 * 60분 (시속 60km 기준)
@@ -918,7 +931,7 @@ ${weatherInfo ? '날씨: '+weatherInfo : ''}
     const courseOrder = activity === '애견카페'
       ? '장소t=cafe인 곳 1개 + t=restaurant인 곳 1개 + t=park인 곳 1개로 구성. 반드시 cafe가 첫번째.'
       : '장소t=restaurant인 곳 1개 + t=cafe인 곳 1개 + t=park인 곳 1개로 구성. 반드시 restaurant가 첫번째.';
-    const rules = `★필수:각코스는${courseOrder} ①카테고리(t필드)별1곳씩 ②펫샵미용병원제외 ③코스내장소간15km이내 ④코스별다른장소조합 ⑤distance필드${durConfig.minKm}미만장소절대금지`;
+    const rules = `★절대규칙: 각 코스는 반드시 t=cafe 1개 + t=restaurant 1개 + t=park 1개 정확히 3곳으로만 구성. t=cafe인 장소를 2개 이상 쓰는것 절대금지. t=restaurant인 장소를 2개 이상 쓰는것 절대금지. ${activity==='애견카페'?'cafe가 첫번째':'restaurant가 첫번째'}. 코스별 다른 장소 조합. distance필드 ${durConfig.minKm}미만 장소 절대금지.`;
 
     const prompt = `아래 장소로 반려견 드라이브 코스 5개를 만들어줘. 반드시 {"courses":[...]} 형식 JSON만 반환.
 강아지:${dogName||'강아지'}(${dogBreed||'믹스'},${sizeLabel}) 활동:${activity} 규칙:${rules}
