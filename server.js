@@ -708,10 +708,12 @@ app.post('/api/generate-course', async (req, res) => {
     // 카테고리 교차 오염 제거 - 카페풀에서 식당성 키워드 제거
     const restaurantWords = ['식당', '파스타', '레스토랑', '고깃집', '삼겹', '치킨', '족발', '국밥', '순대', '곱창', '돈까스', '피자', '버거', '햄버거', '분식', '냉면', '우동', '라멘', '초밥', '스시'];
 
+    const cafeWords = ['카페', '커피', 'cafe', 'coffee', '애견카페', '펫카페', '도그카페'];
     const cafeMergedFiltered = smartDedupSort(mergeWithDB(cafePlaces, 'cafe'))
       .filter(p => !restaurantWords.some(w => p.name.toLowerCase().includes(w)))
       .slice(0, 30);
     const restaurantMergedFiltered = smartDedupSort(mergeWithDB(restaurantPlaces, 'restaurant'))
+      .filter(p => !cafeWords.some(w => p.name.toLowerCase().includes(w)))
       .slice(0, 30);
     const parkMergedFiltered = smartDedupSort(mergeWithDB(parkPlaces, 'park'))
       .slice(0, 30);
