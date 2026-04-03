@@ -566,6 +566,21 @@ app.post('/api/generate-course', async (req, res) => {
     // 3. Groq에게 코스 설계 요청
     const sizeLabel = dogSize === 'small' ? '소형견(10kg 미만)' : dogSize === 'medium' ? '중형견(10~25kg)' : '대형견(25kg 이상)';
 
+    // 거리 기반 드라이브 시간 계산
+    function calcDriveTime(distKm) {
+      const d = parseFloat(distKm) || 0;
+      if (d <= 0) return '';
+      let speed;
+      if (d <= 10) speed = 30;
+      else if (d <= 30) speed = 50;
+      else speed = 70;
+      const driveMin = Math.round((d / speed) * 60);
+      const totalMin = driveMin + 20;
+      const h = Math.floor(totalMin / 60);
+      const m = totalMin % 60;
+      return h > 0 ? `${h}시간 ${m}분` : `${m}분`;
+    }
+
     // source 표시 추가 (선언 먼저)
     const uniqueWithSource = unique.slice(0, 20).map(p => ({
       ...p,
