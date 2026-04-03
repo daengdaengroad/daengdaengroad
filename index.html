@@ -1750,9 +1750,21 @@ function showDetailCourse(c) {
   const colors=['var(--amber)','var(--teal)','var(--brown-lt)','var(--amber-mid)'];
   document.getElementById('detailContent').innerHTML=`
     <div class="section-title" style="margin-bottom:12px">코스 장소</div>
-    ${(c.places||[]).map((p,i)=>{
+    ${(c.places||[]).map((p,i,arr)=>{
       const avg = null; // 서버에서 비동기 로드
       const reviews = [];
+      // 장소 간 이동 시간 계산 (이전 장소 → 현재 장소)
+      let betweenDriveMin = null;
+      if (i === 0) {
+        betweenDriveMin = p.driveMin || null; // 첫 장소는 출발지에서
+      } else {
+        const prev = arr[i-1];
+        const prevDist = parseFloat(prev.distance||0);
+        const curDist = parseFloat(p.distance||0);
+        const betweenDist = Math.abs(curDist - prevDist);
+        if (betweenDist > 0) betweenDriveMin = Math.round((betweenDist / 60) * 60);
+        else if (p.driveMin) betweenDriveMin = p.driveMin;
+      }
       return `
       <div class="place-list-item">
         <div class="place-num" style="background:${colors[i]||colors[0]}">${i+1}</div>
@@ -1760,7 +1772,7 @@ function showDetailCourse(c) {
           <div class="place-name">${p.name}</div>
           <div class="place-addr">${p.address||''}</div>
           <div style="display:flex;gap:8px;margin-top:3px;flex-wrap:wrap">
-            ${p.driveMin ? `<span style="font-size:10px;color:var(--teal);font-weight:600;background:var(--teal-lt);padding:2px 7px;border-radius:8px">&#x1F697; 차로 ${p.driveMin}분</span>` : (p.distance ? `<span style="font-size:10px;color:var(--gray)">&#x1F4CD; ${p.distance}km</span>` : '')}
+            ${betweenDriveMin ? `<span style="font-size:10px;color:var(--teal);font-weight:600;background:var(--teal-lt);padding:2px 7px;border-radius:8px">&#x1F697; 차로 ${betweenDriveMin}분</span>` : (p.distance ? `<span style="font-size:10px;color:var(--gray)">&#x1F4CD; ${p.distance}km</span>` : '')}
             ${p.stayMin ? `<span style="font-size:10px;color:var(--brown-lt);font-weight:600;background:var(--amber-lt);padding:2px 7px;border-radius:8px">&#x23F1; 체류 ${p.stayMin}분</span>` : ''}
           </div>
           ${p.reason?`<div class="place-reason">${p.reason}</div>`:''}
