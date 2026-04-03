@@ -841,234 +841,47 @@ app.post('/api/generate-course', async (req, res) => {
 
     const builtCourses = final3;
 
-    if (builtCourses.length > 0) {
-      builtCourses.forEach(c => {
-        if (c.places?.[0]) {
-          c.placeId = c.places[0].id || '';
-          c.placeName = c.places[0].name;
-        }
-      });
-      console.log(`코스 조합 완료: ${builtCourses.map(c=>c.places.map(p=>p.name).join('+')).join(' / ')}`);
+    builtCourses.forEach(c => {
+      if (c.places?.[0]) {
+        c.placeId = c.places[0].id || '';
+        c.placeName = c.places[0].name;
+      }
+    });
+    console.log(`코스 조합 완료: ${builtCourses.map(c=>c.places.map(p=>p.name).join('+')).join(' / ')}`);
 
-      setToCache(cacheKey, builtCourses);
+    if (builtCourses.length === 0) {
+      return res.status(404).json({ error: '주변에 반려견 동반 가능한 장소가 부족해요. 거리를 늘려보세요.' });
+    }
 
-      // AI 코스 설명 생성 (Groq - 무료)
-      try {
-        await Promise.all(builtCourses.map(async (course) => {
-          const placeNames = course.places.map(p => `${p.name}(${p.catTag==='cafe'?'카페':p.catTag==='restaurant'?'식당':'공원'})`).join(', ');
-          const weatherInfo = req.body.weather || '';
-          const response = await axios.post('https://api.groq.com/openai/v1/chat/completions', {
-            model: 'llama-3.1-8b-instant',
-            max_tokens: 120,
-            messages: [
-              { role: 'system', content: '너는 반려견 드라이브 코스를 소개하는 따뜻한 어시스턴트야. 항상 한국어로 답해.' },
-              { role: 'user', content: `이 코스를 설레고 따뜻하게 한 줄로 소개해줘. (40자 이내, 이모지 1개, 한국어)
+    setToCache(cacheKey, builtCourses);
+
+    // AI 코스 설명 생성 (Groq)
+    try {
+      await Promise.all(builtCourses.map(async (course) => {
+        const placeNames = course.places.map(p => `${p.name}(${p.catTag==='cafe'?'카페':p.catTag==='restaurant'?'식당':'공원'})`).join(', ');
+        const weatherInfo = req.body.weather || '';
+        const response = await axios.post('https://api.groq.com/openai/v1/chat/completions', {
+          model: 'llama-3.1-8b-instant',
+          max_tokens: 120,
+          messages: [
+            { role: 'system', content: '너는 반려견 드라이브 코스를 소개하는 따뜻한 어시스턴트야. 항상 한국어 존댓말로 답해.' },
+            { role: 'user', content: `이 코스를 설레고 따뜻하게 한 줄로 소개해줘. (40자 이내, 이모지 1개, 한국어 존댓말)
 코스: ${placeNames}
 드라이브: ${course.driveTime}
 ${weatherInfo ? '날씨: '+weatherInfo : ''}
 규칙: 특정 견종/크기 언급 금지. 코스의 매력과 하루 흐름을 자연스럽게 표현. 설명만 출력.` }
-            ]
-          }, {
-            headers: { 'Authorization': `Bearer ${getGroqKey()}`, 'Content-Type': 'application/json' },
-            timeout: 8000
-          });
-          course.aiComment = response.data.choices[0]?.message?.content?.trim() || '';
-        }));
-      } catch(e) {
-        console.error('AI 설명 생성 오류:', e.message);
-      }
-
-      return res.json({ success: true, courses: builtCourses });
-    }
-    // ── 후기 평점 기반 정렬 ──
-    const reviews = loadReviews();
-    const scoredPlaces = uniqueWithSource.map(p => {
-      const placeReviews = reviews[p.id] || reviews[p.name] || [];
-      const avgRating = placeReviews.length
-        ? placeReviews.reduce((s, r) => s + r.stars, 0) / placeReviews.length
-        : 0;
-      const reviewCount = placeReviews.length;
-      // 점수 = 평점 × log(후기수+1) + 거리 가까울수록 보너스
-      const distScore = Math.max(0, 10 - (p.distance || 10));
-      const score = (avgRating * Math.log(reviewCount + 1)) + (distScore * 0.3);
-      return { ...p, avgRating, reviewCount, score };
-    });
-
-    // 평점/후기 있는 곳 우선, 없으면 거리순
-    scoredPlaces.sort((a, b) => {
-      if (b.reviewCount !== a.reviewCount) return b.score - a.score;
-      return (a.distance||99) - (b.distance||99);
-    });
-
-    console.log('상위 장소:', scoredPlaces.slice(0,3).map(p =>
-      `${p.name}(★${p.avgRating.toFixed(1)},후기${p.reviewCount}개,${(p.distance||0).toFixed(1)}km)`
-    ));
-
-    // 장소 데이터 극도로 압축 (토큰 최소화) - 카테고리별로 분리해서 넘김
-    const cafePlacesCompact = scoredPlaces.filter(p => p.catTag === 'cafe').slice(0, 8).map(p => ({
-      n: p.name,
-      a: (p.address||'').replace('경기도','경기').replace('서울특별시','서울').split(' ').slice(0,4).join(' '),
-      d: parseFloat((p.distance||0).toFixed(1)),
-      t: 'cafe'
-    }));
-    const restaurantPlacesCompact = scoredPlaces.filter(p => p.catTag === 'restaurant').slice(0, 8).map(p => ({
-      n: p.name,
-      a: (p.address||'').replace('경기도','경기').replace('서울특별시','서울').split(' ').slice(0,4).join(' '),
-      d: parseFloat((p.distance||0).toFixed(1)),
-      t: 'restaurant'
-    }));
-    const parkPlacesCompact = scoredPlaces.filter(p => p.catTag === 'park').slice(0, 8).map(p => ({
-      n: p.name,
-      a: (p.address||'').replace('경기도','경기').replace('서울특별시','서울').split(' ').slice(0,4).join(' '),
-      d: parseFloat((p.distance||0).toFixed(1)),
-      t: 'park'
-    }));
-    const compactPlaces = [...cafePlacesCompact, ...restaurantPlacesCompact, ...parkPlacesCompact];
-
-    // 규칙을 한줄로 압축
-    // 드라이브 시간 = 거리(km) / 60 * 60분 (시속 60km 기준)
-    const firstCat = activity === '애견카페' ? 'cafe' : 'restaurant';
-    const courseOrder = activity === '애견카페'
-      ? '장소t=cafe인 곳 1개 + t=restaurant인 곳 1개 + t=park인 곳 1개로 구성. 반드시 cafe가 첫번째.'
-      : '장소t=restaurant인 곳 1개 + t=cafe인 곳 1개 + t=park인 곳 1개로 구성. 반드시 restaurant가 첫번째.';
-    const rules = `★절대규칙: 각 코스는 반드시 t=cafe 1개 + t=restaurant 1개 + t=park 1개 정확히 3곳으로만 구성. t=cafe인 장소를 2개 이상 쓰는것 절대금지. t=restaurant인 장소를 2개 이상 쓰는것 절대금지. ${activity==='애견카페'?'cafe가 첫번째':'restaurant가 첫번째'}. 코스별 다른 장소 조합. distance필드 ${durConfig.minKm}미만 장소 절대금지.`;
-
-    const prompt = `아래 장소로 반려견 드라이브 코스 5개를 만들어줘. 반드시 {"courses":[...]} 형식 JSON만 반환.
-강아지:${dogName||'강아지'}(${dogBreed||'믹스'},${sizeLabel}) 활동:${activity} 규칙:${rules}
-장소목록:${JSON.stringify(compactPlaces)}
-반환형식:{"courses":[{"title":"제목","driveTime":"차로X분","totalDistance":총km숫자,"places":[{"name":"장소명","address":"주소","distance":숫자,"reason":"이유1문장"}],"highlight":"한줄"}]}`;
-
-    const groqRes = await axios.post(
-      'https://api.groq.com/openai/v1/chat/completions',
-      {
-        model: 'llama-3.1-8b-instant',
-        messages: [
-          { role: 'system', content: '너는 반려견 여행 코스 추천 AI야. 반드시 제공된 장소 목록에 있는 장소만 사용해. 목록에 없는 장소는 절대 만들지 마. JSON만 반환하고 마크다운 금지.' },
-          { role: 'user', content: prompt }
-        ],
-        temperature: 0.3,
-        max_tokens: 1200
-      },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${getGroqKey()}`
-        }
-      }
-    );
-
-    let rawText = groqRes.data.choices[0].message.content;
-    console.log('Groq 응답 길이:', rawText.length);
-
-    // JSON 파싱 - 강화된 복구 로직
-    rawText = rawText.replace(/```json|```/g,'').trim();
-
-    function extractCourses(text) {
-      // {"courses":[...]} 전체 파싱 시도
-      const fullMatch = text.match(/\{[\s\S]*"courses"[\s\S]*\}/);
-      if (fullMatch) {
-        try { return JSON.parse(fullMatch[0]); } catch {}
-      }
-      // courses 배열만 추출해서 복구
-      const arrMatch = text.match(/"courses"\s*:\s*\[([\s\S]*)/);
-      if (!arrMatch) throw new Error('courses 배열 없음');
-      let str = arrMatch[1];
-      let depth = 0, lastEnd = -1;
-      for (let i = 0; i < str.length; i++) {
-        if (str[i] === '{') depth++;
-        if (str[i] === '}') { depth--; if (depth === 0) lastEnd = i; }
-        if (str[i] === ']' && depth === 0) { lastEnd = i - 1; break; }
-      }
-      if (lastEnd === -1) throw new Error('완전한 코스 없음');
-      const courses = JSON.parse('[' + str.substring(0, lastEnd + 1) + ']');
-      console.log(`JSON 복구: ${courses.length}개 코스`);
-      return { courses };
+          ]
+        }, {
+          headers: { 'Authorization': `Bearer ${getGroqKey()}`, 'Content-Type': 'application/json' },
+          timeout: 8000
+        });
+        course.aiComment = response.data.choices[0]?.message?.content?.trim() || '';
+      }));
+    } catch(e) {
+      console.error('AI 설명 생성 오류:', e.message);
     }
 
-    let result;
-    try { result = extractCourses(rawText); }
-    catch(e) {
-      console.error('파싱 실패, 원본:', rawText.substring(0, 300));
-      throw new Error('JSON 파싱 실패: ' + e.message);
-    }
-    // 거리 기반 드라이브 시간 계산 (시속 80km 기준)
-    function calcDriveTime(distKm) {
-      const d = parseFloat(distKm) || 0;
-      if (d <= 0) return '';
-      // 거리별 현실적 속도
-      let speed;
-      if (d <= 10) speed = 30;
-      else if (d <= 30) speed = 50;
-      else speed = 70;
-      const driveMin = Math.round((d / speed) * 60);
-      // 준비시간 20분 (옷입고 강아지 준비 + 주차)
-      const totalMin = driveMin + 20;
-      const h = Math.floor(totalMin / 60);
-      const m = totalMin % 60;
-      return h > 0 ? `${h}시간 ${m}분` : `${m}분`;
-    }
-
-    // uniqueWithSource에서 장소 거리 정보 맵 생성
-    const distMap = {};
-    uniqueWithSource.forEach(p => { if(p.name) distMap[p.name] = p.distance; });
-
-    // 카테고리 중복 검증 함수
-    function isCafe(p) {
-      const name = (p.name || '').toLowerCase();
-      const cat = (p.catTag || p.category || '').toLowerCase();
-      const cafeKeywords = ['카페', '애견카페', '펫카페', '도그카페', '강아지카페', '반려견카페', '애견 카페', '펫 카페'];
-      return cat === 'cafe' || cafeKeywords.some(k => name.includes(k));
-    }
-    function isRestaurant(p) {
-      const name = (p.name || '').toLowerCase();
-      const cat = (p.category || '').toLowerCase();
-      return ['식당', '레스토랑', '음식점', '맛집'].some(k => name.includes(k) || cat.includes(k));
-    }
-    function isPark(p) {
-      const name = (p.name || '').toLowerCase();
-      const cat = (p.category || '').toLowerCase();
-      return ['공원', '놀이터', '산책', '계곡', '수영장', '운동장'].some(k => name.includes(k) || cat.includes(k));
-    }
-
-    const allCourses = (result.courses || []).map(course => {
-      const places = course.places || [];
-      places.forEach(p => {
-        // 원본 데이터에서 거리 가져오기
-        const realDist = distMap[p.name] || parseFloat(p.distance || 0);
-        if (realDist > 0) {
-          p.distance = realDist;
-          p.driveTime = calcDriveTime(realDist);
-          p.driveMin = Math.round((realDist / 80) * 60);
-        }
-      });
-
-      // 카테고리 중복 체크 - 카페 2개 이상이면 코스 제외
-      const cafeCount = places.filter(p => isCafe(p)).length;
-      if (cafeCount >= 2) {
-        console.log(`  코스 제외 (카페 중복 ${cafeCount}개): ${course.title}`);
-        return null;
-      }
-
-      const maxDist = places.reduce((m, p) => Math.max(m, parseFloat(p.distance)||0), 0);
-      if (maxDist > 0) {
-        course.driveTime = calcDriveTime(maxDist);
-        course.totalDistance = parseFloat(maxDist.toFixed(1));
-      }
-      console.log(`  코스: ${course.title} → ${course.driveTime} (${maxDist}km)`);
-      return course;
-    }).filter(Boolean);
-    console.log(`코스 생성 완료: ${allCourses.length}개 → 캐시 저장`);
-
-    // 캐시에 전체 저장
-    setToCache(cacheKey, allCourses);
-
-    // 랜덤 3개 반환
-    const returnCourses = [...allCourses].sort(() => Math.random() - 0.5).slice(0, 3);
-    res.json({
-      success: true,
-      courses: returnCourses,
-      meta: { totalPlacesFound: unique.length, activity, duration, radius: radius / 1000 }
-    });
+    return res.json({ success: true, courses: builtCourses });
 
   } catch (err) {
     console.error('코스 생성 오류:', err.message);
