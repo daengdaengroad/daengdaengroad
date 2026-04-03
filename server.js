@@ -1002,8 +1002,9 @@ ${weatherInfo ? '날씨: '+weatherInfo : ''}
     // 카테고리 중복 검증 함수
     function isCafe(p) {
       const name = (p.name || '').toLowerCase();
-      const cat = (p.category || '').toLowerCase();
-      return ['카페', '애견카페', '펫카페', '도그카페', '강아지카페', '반려견카페'].some(k => name.includes(k) || cat.includes(k));
+      const cat = (p.catTag || p.category || '').toLowerCase();
+      const cafeKeywords = ['카페', '애견카페', '펫카페', '도그카페', '강아지카페', '반려견카페', '애견 카페', '펫 카페'];
+      return cat === 'cafe' || cafeKeywords.some(k => name.includes(k));
     }
     function isRestaurant(p) {
       const name = (p.name || '').toLowerCase();

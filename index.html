@@ -1756,7 +1756,7 @@ function showDetailCourse(c) {
       // 장소 간 이동 시간 계산 (이전 장소 → 현재 장소)
       let betweenDriveMin = null;
       if (i === 0) {
-        betweenDriveMin = p.driveMin || null; // 첫 장소는 출발지에서
+        betweenDriveMin = null; // 첫 장소는 시작점이라 이동 시간 표시 안 함
       } else {
         const prev = arr[i-1];
         const prevDist = parseFloat(prev.distance||0);
