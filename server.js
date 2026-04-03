@@ -999,6 +999,23 @@ ${weatherInfo ? '날씨: '+weatherInfo : ''}
     const distMap = {};
     uniqueWithSource.forEach(p => { if(p.name) distMap[p.name] = p.distance; });
 
+    // 카테고리 중복 검증 함수
+    function isCafe(p) {
+      const name = (p.name || '').toLowerCase();
+      const cat = (p.category || '').toLowerCase();
+      return ['카페', '애견카페', '펫카페', '도그카페', '강아지카페', '반려견카페'].some(k => name.includes(k) || cat.includes(k));
+    }
+    function isRestaurant(p) {
+      const name = (p.name || '').toLowerCase();
+      const cat = (p.category || '').toLowerCase();
+      return ['식당', '레스토랑', '음식점', '맛집'].some(k => name.includes(k) || cat.includes(k));
+    }
+    function isPark(p) {
+      const name = (p.name || '').toLowerCase();
+      const cat = (p.category || '').toLowerCase();
+      return ['공원', '놀이터', '산책', '계곡', '수영장', '운동장'].some(k => name.includes(k) || cat.includes(k));
+    }
+
     const allCourses = (result.courses || []).map(course => {
       const places = course.places || [];
       places.forEach(p => {
@@ -1010,6 +1027,14 @@ ${weatherInfo ? '날씨: '+weatherInfo : ''}
           p.driveMin = Math.round((realDist / 80) * 60);
         }
       });
+
+      // 카테고리 중복 체크 - 카페 2개 이상이면 코스 제외
+      const cafeCount = places.filter(p => isCafe(p)).length;
+      if (cafeCount >= 2) {
+        console.log(`  코스 제외 (카페 중복 ${cafeCount}개): ${course.title}`);
+        return null;
+      }
+
       const maxDist = places.reduce((m, p) => Math.max(m, parseFloat(p.distance)||0), 0);
       if (maxDist > 0) {
         course.driveTime = calcDriveTime(maxDist);
@@ -1017,7 +1042,7 @@ ${weatherInfo ? '날씨: '+weatherInfo : ''}
       }
       console.log(`  코스: ${course.title} → ${course.driveTime} (${maxDist}km)`);
       return course;
-    });
+    }).filter(Boolean);
     console.log(`코스 생성 완료: ${allCourses.length}개 → 캐시 저장`);
 
     // 캐시에 전체 저장
