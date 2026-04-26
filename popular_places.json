@@ -433,18 +433,6 @@
       "score": 50
     },
     {
-      "name": "도그다이브 고양향동점",
-      "address": "경기 고양시 덕양구 향동로 194",
-      "lat": 37.6063753926965,
-      "lng": 126.893032677843,
-      "phone": "",
-      "url": "http://place.map.kakao.com/1911237330",
-      "category": "음식점 > 카페 > 테마카페 > 애견카페",
-      "indoor": true,
-      "source": "kakao",
-      "score": 50
-    },
-    {
       "name": "커피베이 도그다이브점",
       "address": "경기 고양시 덕양구 향동로 194",
       "lat": 37.6063753926965,
@@ -925,18 +913,6 @@
       "score": 50
     },
     {
-      "name": "도그존",
-      "address": "서울 송파구 올림픽로12길 28",
-      "lat": 37.5091165624012,
-      "lng": 127.083244075303,
-      "phone": "0507-1398-0310",
-      "url": "http://place.map.kakao.com/1844759979",
-      "category": "음식점 > 카페 > 테마카페 > 애견카페",
-      "indoor": true,
-      "source": "kakao",
-      "score": 50
-    },
-    {
       "name": "포포앤미루",
       "address": "서울 강동구 양재대로89가길 30",
       "lat": 37.525255224357,
@@ -989,7 +965,7 @@
       "address": "서울 송파구 법원로4길 17",
       "lat": 37.48315682705,
       "lng": 127.122496023723,
-      "phone": "0502-5553-6133",
+      "phone": "010-9414-9609",
       "url": "http://place.map.kakao.com/1657350613",
       "category": "음식점 > 카페 > 테마카페 > 애견카페",
       "indoor": true,
@@ -1033,6 +1009,18 @@
       "score": 50
     },
     {
+      "name": "카페히릿",
+      "address": "서울 광진구 광나루로 404",
+      "lat": 37.546957338583,
+      "lng": 127.074378142635,
+      "phone": "070-8870-4442",
+      "url": "http://place.map.kakao.com/22674971",
+      "category": "음식점 > 카페 > 테마카페 > 애견카페",
+      "indoor": true,
+      "source": "kakao",
+      "score": 50
+    },
+    {
       "name": "도그맥스",
       "address": "경기 남양주시 와부읍 석실로율석길 108-13",
       "lat": 37.61644255829342,
@@ -1051,6 +1039,18 @@
       "lng": 126.929214828211,
       "phone": "070-4404-1212",
       "url": "http://place.map.kakao.com/273102633",
+      "category": "음식점 > 카페 > 테마카페 > 애견카페",
+      "indoor": true,
+      "source": "kakao",
+      "score": 50
+    },
+    {
+      "name": "개를위한하루",
+      "address": "서울 양천구 신정중앙로 88",
+      "lat": 37.5264412058685,
+      "lng": 126.861303238084,
+      "phone": "0507-1337-5337",
+      "url": "http://place.map.kakao.com/982152248",
       "category": "음식점 > 카페 > 테마카페 > 애견카페",
       "indoor": true,
       "source": "kakao",
@@ -1177,6 +1177,18 @@
       "score": 60
     },
     {
+      "name": "카페 르상스",
+      "address": "서울특별시 용산구 대사관로 35 사운즈 한남 1층",
+      "lat": 37.5337502,
+      "lng": 127.0021482,
+      "phone": "",
+      "url": "https://catchtable.co.kr/cafelesens",
+      "category": "음식점>카페,디저트",
+      "indoor": true,
+      "source": "naver",
+      "score": 60
+    },
+    {
       "name": "리지트커피",
       "address": "서울특별시 용산구 녹사평대로32길 33-1 1층, 2층",
       "lat": 37.5332843,
@@ -1195,18 +1207,6 @@
       "lng": 127.0025593,
       "phone": "",
       "url": "https://www.instagram.com/concure_hannam",
-      "category": "음식점>카페,디저트",
-      "indoor": true,
-      "source": "naver",
-      "score": 60
-    },
-    {
-      "name": "안티스트레스",
-      "address": "서울특별시 용산구 이태원로20가길 9-7 2층",
-      "lat": 37.5338374,
-      "lng": 126.9928439,
-      "phone": "",
-      "url": "http://www.instagram.com/antistress_seoul",
       "category": "음식점>카페,디저트",
       "indoor": true,
       "source": "naver",
@@ -1501,18 +1501,6 @@
       "score": 50
     },
     {
-      "name": "개를위한하루",
-      "address": "서울 양천구 신정중앙로 88",
-      "lat": 37.5264412058685,
-      "lng": 126.861303238084,
-      "phone": "0507-1337-5337",
-      "url": "http://place.map.kakao.com/982152248",
-      "category": "음식점 > 카페 > 테마카페 > 애견카페",
-      "indoor": true,
-      "source": "kakao",
-      "score": 50
-    },
-    {
       "name": "개편한세상",
       "address": "경기 부천시 오정구 고리울로51번길 43",
       "lat": 37.5291130358109,
@@ -1586,7 +1574,7 @@
     },
     {
       "name": "카페가토",
-      "address": "서울특별시 강서구 마곡동로 62 사이언스 타워 빌딩 115호",
+      "address": "서울특별시 강서구 마곡동로 62 마곡사이언스 타워 빌딩 115호",
       "lat": 37.5605977,
       "lng": 126.833987,
       "phone": "",
@@ -2197,18 +2185,6 @@
       "score": 50
     },
     {
-      "name": "더수피다",
-      "address": "경기 수원시 팔달구 정조로 771-1",
-      "lat": 37.2769918010172,
-      "lng": 127.016502843067,
-      "phone": "010-8699-8599",
-      "url": "http://place.map.kakao.com/636153008",
-      "category": "음식점 > 카페 > 테마카페 > 애견카페",
-      "indoor": true,
-      "source": "kakao",
-      "score": 50
-    },
-    {
       "name": "루프독스",
       "address": "경기 수원시 팔달구 정조로 775-5",
       "lat": 37.2769693319775,
@@ -2299,6 +2275,18 @@
       "lng": 127.043070811902,
       "phone": "031-217-7741",
       "url": "http://place.map.kakao.com/855351319",
+      "category": "음식점 > 카페 > 테마카페 > 애견카페",
+      "indoor": true,
+      "source": "kakao",
+      "score": 50
+    },
+    {
+      "name": "멍니버스",
+      "address": "경기 수원시 장안구 송원로14번길 42",
+      "lat": 37.29638845680025,
+      "lng": 127.00775052272337,
+      "phone": "010-7926-3316",
+      "url": "http://place.map.kakao.com/894940699",
       "category": "음식점 > 카페 > 테마카페 > 애견카페",
       "indoor": true,
       "source": "kakao",
@@ -3637,13 +3625,13 @@
       "score": 60
     },
     {
-      "name": "오프리쉬 독파크",
-      "address": "경기도 파주시 문산읍 임진나루길 196-41 1동",
-      "lat": 37.8850027,
-      "lng": 126.7900825,
+      "name": "아웃팅카페",
+      "address": "경기도 파주시 광탄면 기산로186번길 7 아웃팅카페",
+      "lat": 37.7752834,
+      "lng": 126.918354,
       "phone": "",
-      "url": "http://instagram.com/off_leash_dogpark",
-      "category": "애견카페",
+      "url": "https://www.instagram.com/outing.cafe",
+      "category": "음식점>카페,디저트",
       "indoor": true,
       "source": "naver",
       "score": 60
@@ -3805,13 +3793,13 @@
       "score": 60
     },
     {
-      "name": "구름산카페",
-      "address": "경기도 가평군 상면 수목원로 238-81 1동",
-      "lat": 37.7577365,
-      "lng": 127.3582955,
+      "name": "암파스타레 가평",
+      "address": "경기도 가평군 상면 수목원로 183 더플래츠카페 2F ,야외 펍 및 셀렉샵 1F",
+      "lat": 37.762016,
+      "lng": 127.3630148,
       "phone": "",
-      "url": "https://blog.naver.com/gureumsancafe",
-      "category": "음식점>카페,디저트",
+      "url": "https://www.instagram.com/gp_theplatz_cafe",
+      "category": "브런치카페",
       "indoor": true,
       "source": "naver",
       "score": 60
@@ -3985,18 +3973,6 @@
       "score": 60
     },
     {
-      "name": "내추럴가든529",
-      "address": "경기도 양평군 서종면 내수입길 108-8 내추럴가든529",
-      "lat": 37.6375245,
-      "lng": 127.3808073,
-      "phone": "",
-      "url": "https://blog.naver.com/natural529",
-      "category": "여행,명소>식물원,수목원",
-      "indoor": true,
-      "source": "naver",
-      "score": 60
-    },
-    {
       "name": "강이다",
       "address": "경기도 양평군 양서면 북한강로81번길 23 카페 강이다",
       "lat": 37.5504599,
@@ -4016,6 +3992,18 @@
       "phone": "",
       "url": "http://www.instagram.com/gureumgarden_bakery",
       "category": "카페,디저트>베이커리",
+      "indoor": true,
+      "source": "naver",
+      "score": 60
+    },
+    {
+      "name": "꽃구름",
+      "address": "경기도 양평군 강하면 강남로 475",
+      "lat": 37.5059088,
+      "lng": 127.4371243,
+      "phone": "",
+      "url": "https://blog.naver.com/flower_cloud_cafe",
+      "category": "음식점>카페,디저트",
       "indoor": true,
       "source": "naver",
       "score": 60
@@ -4265,7 +4253,7 @@
       "address": "경기 평택시 비전5로 20-10",
       "lat": 36.9997594902442,
       "lng": 127.113626293074,
-      "phone": "0502-5552-9354",
+      "phone": "0502-5554-1288",
       "url": "http://place.map.kakao.com/629970048",
       "category": "음식점 > 카페 > 테마카페 > 애견카페",
       "indoor": true,
@@ -7323,18 +7311,6 @@
       "score": 50
     },
     {
-      "name": "강아지숲",
-      "address": "전남 광양시 사동로 252",
-      "lat": 34.9520094618171,
-      "lng": 127.695332396568,
-      "phone": "",
-      "url": "http://place.map.kakao.com/1445060969",
-      "category": "음식점 > 카페 > 테마카페 > 애견카페",
-      "indoor": false,
-      "source": "kakao",
-      "score": 50
-    },
-    {
       "name": "순천만487카페",
       "address": "전라남도 순천시 순천만길 487 순천만487cafe",
       "lat": 34.8879802,
@@ -7623,18 +7599,6 @@
       "score": 60
     },
     {
-      "name": "작은파도",
-      "address": "전북특별자치도 남원시 중갈치길 73 3동 1층",
-      "lat": 35.4510351,
-      "lng": 127.4154611,
-      "phone": "",
-      "url": "https://www.instagram.com/the_little_pado",
-      "category": "음식점>카페,디저트",
-      "indoor": true,
-      "source": "naver",
-      "score": 60
-    },
-    {
       "name": "지리산하늘과바람과별과개",
       "address": "전북특별자치도 남원시 운봉읍 행정공안길 239-10 지리산하늘과바람과별과개",
       "lat": 35.4030301,
@@ -7642,6 +7606,18 @@
       "phone": "",
       "url": "https://youtube.com/channel/UCOx_mcGr2zUMYu6c0H3iEgw",
       "category": "반려동물>반려견놀이터",
+      "indoor": true,
+      "source": "naver",
+      "score": 60
+    },
+    {
+      "name": "작은파도",
+      "address": "전북특별자치도 남원시 중갈치길 73 3동 1층",
+      "lat": 35.4510351,
+      "lng": 127.4154611,
+      "phone": "",
+      "url": "https://www.instagram.com/the_little_pado",
+      "category": "음식점>카페,디저트",
       "indoor": true,
       "source": "naver",
       "score": 60
@@ -9183,24 +9159,24 @@
       "score": 50
     },
     {
-      "name": "늘품",
-      "address": "경남 김해시 주촌면 선지로13번길 13",
-      "lat": 35.2348229923512,
-      "lng": 128.84173694072,
-      "phone": "010-8555-0740",
-      "url": "http://place.map.kakao.com/790905365",
+      "name": "브리앙뜨",
+      "address": "경남 김해시 율하숲길 16",
+      "lat": 35.17049754656813,
+      "lng": 128.82368694678007,
+      "phone": "010-4073-6636",
+      "url": "http://place.map.kakao.com/1195303761",
       "category": "음식점 > 카페 > 테마카페 > 애견카페",
       "indoor": true,
       "source": "kakao",
       "score": 50
     },
     {
-      "name": "퍼피랜드",
-      "address": "경남 창원시 진해구 남영로473번길 14",
-      "lat": 35.112208432136406,
-      "lng": 128.7797355072968,
-      "phone": "055-552-6264",
-      "url": "http://place.map.kakao.com/1419165726",
+      "name": "늘품",
+      "address": "경남 김해시 주촌면 선지로13번길 13",
+      "lat": 35.2348229923512,
+      "lng": 128.84173694072,
+      "phone": "010-8555-0740",
+      "url": "http://place.map.kakao.com/790905365",
       "category": "음식점 > 카페 > 테마카페 > 애견카페",
       "indoor": true,
       "source": "kakao",
@@ -9339,18 +9315,6 @@
       "score": 50
     },
     {
-      "name": "베이글 베이글러",
-      "address": "경상북도 경주시 교촌길 18 베이글 베이글러",
-      "lat": 35.8317947,
-      "lng": 129.213867,
-      "phone": "",
-      "url": "https://blog.naver.com/bagelbageler",
-      "category": "음식점>카페,디저트",
-      "indoor": true,
-      "source": "naver",
-      "score": 60
-    },
-    {
       "name": "후프후프",
       "address": "경상북도 경주시 태종로 736 후프후프",
       "lat": 35.8391436,
@@ -9358,6 +9322,18 @@
       "phone": "",
       "url": "https://www.instagram.com/hoofhoof_hihihing?igsh=MTJ5dDB4MTIydXFwNA%3D%3D&utm_source=qr",
       "category": "브런치카페",
+      "indoor": true,
+      "source": "naver",
+      "score": 60
+    },
+    {
+      "name": "베이글 베이글러",
+      "address": "경상북도 경주시 교촌길 18 베이글 베이글러",
+      "lat": 35.8317947,
+      "lng": 129.213867,
+      "phone": "",
+      "url": "https://blog.naver.com/bagelbageler",
+      "category": "음식점>카페,디저트",
       "indoor": true,
       "source": "naver",
       "score": 60
@@ -9581,8 +9557,8 @@
     {
       "name": "카페 하모하모",
       "address": "경상북도 안동시 풍천면 봉호로 3626",
-      "lat": 36.5449298,
-      "lng": 128.4612322,
+      "lat": 36.5452762,
+      "lng": 128.4615729,
       "phone": "",
       "url": "",
       "category": "음식점>카페,디저트",
@@ -9855,18 +9831,6 @@
       "score": 50
     },
     {
-      "name": "타타스베이글 진주점",
-      "address": "경상남도 진주시 월아산로 2066 1층, 2층",
-      "lat": 35.2128739,
-      "lng": 128.1183906,
-      "phone": "",
-      "url": "https://www.instagram.com/tatas_jinju",
-      "category": "음식점>카페,디저트",
-      "indoor": true,
-      "source": "naver",
-      "score": 60
-    },
-    {
       "name": "커피플라워",
       "address": "경상남도 진주시 남강로 36 커피플라워",
       "lat": 35.1648985,
@@ -9910,6 +9874,18 @@
       "phone": "",
       "url": "https://www.instagram.com/butter.hole",
       "category": "카페,디저트>베이커리",
+      "indoor": true,
+      "source": "naver",
+      "score": 60
+    },
+    {
+      "name": "카페보스 진주캠핑피카푸점",
+      "address": "경상남도 진주시 내동면 내축로 523",
+      "lat": 35.1288852,
+      "lng": 128.0226605,
+      "phone": "",
+      "url": "https://www.instagram.com/cafetheloungee",
+      "category": "음식점>카페,디저트>카페",
       "indoor": true,
       "source": "naver",
       "score": 60
@@ -10243,7 +10219,7 @@
       "address": "제주특별자치도 제주시 월광로 145-8",
       "lat": 33.492470787946,
       "lng": 126.473389443461,
-      "phone": "0502-5551-6786",
+      "phone": "010-3321-2218",
       "url": "http://place.map.kakao.com/1634540626",
       "category": "음식점 > 카페 > 테마카페 > 애견카페",
       "indoor": true,
@@ -10347,7 +10323,7 @@
       "score": 60
     },
     {
-      "name": "제주빵집",
+      "name": "애월제주빵집",
       "address": "제주특별자치도 제주시 애월읍 상가목장길 84 제주빵집",
       "lat": 33.3932461,
       "lng": 126.3835185,
@@ -11167,8 +11143,8 @@
     {
       "name": "크래프트아일랜드 잠실점 본관",
       "address": "서울 송파구 올림픽로35가길 10",
-      "lat": 37.517183739198,
-      "lng": 127.102138801072,
+      "lat": 37.51732406141973,
+      "lng": 127.10240933887825,
       "phone": "02-413-1555",
       "url": "http://place.map.kakao.com/805143288",
       "category": "음식점 > 술집 > 호프,요리주점",
@@ -11609,6 +11585,18 @@
       "score": 60
     },
     {
+      "name": "리키코",
+      "address": "서울특별시 용산구 백범로 326 1층 리키코",
+      "lat": 37.5381476,
+      "lng": 126.965051,
+      "phone": "",
+      "url": "https://www.instagram.com/likkiko.coffeeshop",
+      "category": "브런치카페",
+      "indoor": true,
+      "source": "naver",
+      "score": 60
+    },
+    {
       "name": "커피파는술집",
       "address": "서울 노원구 노해로85길 15-7",
       "lat": 37.65636895757019,
@@ -11945,18 +11933,6 @@
       "score": 60
     },
     {
-      "name": "와요커피 마곡점",
-      "address": "서울특별시 강서구 마곡중앙6로 45 1층 136호",
-      "lat": 37.5606312,
-      "lng": 126.8327206,
-      "phone": "",
-      "url": "https://100원커피이벤트-선착순주문하기.com",
-      "category": "음식점>카페,디저트",
-      "indoor": true,
-      "source": "naver",
-      "score": 60
-    },
-    {
       "name": "BOIDA",
       "address": "서울특별시 강서구 공항대로 583 e편한세상상가 1층 4호",
       "lat": 37.5484642,
@@ -11964,6 +11940,18 @@
       "phone": "",
       "url": "",
       "category": "카페,디저트>카페",
+      "indoor": true,
+      "source": "naver",
+      "score": 60
+    },
+    {
+      "name": "와요커피 마곡점",
+      "address": "서울특별시 강서구 마곡중앙6로 45 1층 136호",
+      "lat": 37.5606312,
+      "lng": 126.8327206,
+      "phone": "",
+      "url": "https://100원커피이벤트-선착순주문하기.com",
+      "category": "음식점>카페,디저트",
       "indoor": true,
       "source": "naver",
       "score": 60
@@ -13385,18 +13373,6 @@
       "score": 60
     },
     {
-      "name": "견애가",
-      "address": "경기도 고양시 덕양구 동헌로 100 1층 견애가",
-      "lat": 37.7061406,
-      "lng": 126.8688036,
-      "phone": "",
-      "url": "https://www.instagram.com/gag_mung",
-      "category": "한식>육류,고기요리",
-      "indoor": true,
-      "source": "naver",
-      "score": 60
-    },
-    {
       "name": "고기가카페",
       "address": "경기도 고양시 덕양구 대장길50번길 79-5 고기가",
       "lat": 37.6379123,
@@ -13416,6 +13392,18 @@
       "phone": "",
       "url": "http://www.tenpercentcoffee.com/",
       "category": "음식점>카페,디저트>카페",
+      "indoor": true,
+      "source": "naver",
+      "score": 60
+    },
+    {
+      "name": "삼식당",
+      "address": "경기도 고양시 덕양구 안진로 11 1층",
+      "lat": 37.6461502,
+      "lng": 126.9145637,
+      "phone": "",
+      "url": "https://www.instagram.com/samsikdang_meals",
+      "category": "음식점>양식",
       "indoor": true,
       "source": "naver",
       "score": 60
@@ -14193,7 +14181,7 @@
       "address": "강원특별자치도 춘천시 남산면 서천길 145",
       "lat": 37.8442798056033,
       "lng": 127.545369065298,
-      "phone": "0507-1388-1201",
+      "phone": "033-263-1201",
       "url": "http://place.map.kakao.com/27270356",
       "category": "음식점 > 한식 > 육류,고기 > 닭요리",
       "indoor": true,
@@ -14307,6 +14295,18 @@
       "indoor": true,
       "source": "naver",
       "score": 60
+    },
+    {
+      "name": "향촌흑염소 양평스마트점",
+      "address": "경기 양평군 양평읍 경강로 1634",
+      "lat": 37.50432226921835,
+      "lng": 127.46335356851378,
+      "phone": "031-771-5450",
+      "url": "http://place.map.kakao.com/368653484",
+      "category": "음식점 > 한식",
+      "indoor": true,
+      "source": "kakao",
+      "score": 50
     },
     {
       "name": "대디스바베큐",
@@ -14471,18 +14471,6 @@
       "lng": 127.584608076538,
       "phone": "031-773-5678",
       "url": "http://place.map.kakao.com/8142683",
-      "category": "음식점 > 한식",
-      "indoor": true,
-      "source": "kakao",
-      "score": 50
-    },
-    {
-      "name": "뜰안채",
-      "address": "경기 양평군 용문면 용문산로628번길 6",
-      "lat": 37.5451503529032,
-      "lng": 127.584853401724,
-      "phone": "0507-1411-7893",
-      "url": "http://place.map.kakao.com/1014247313",
       "category": "음식점 > 한식",
       "indoor": true,
       "source": "kakao",
@@ -14693,6 +14681,30 @@
       "score": 50
     },
     {
+      "name": "장어집",
+      "address": "경기도 화성시 효행구 정남면 세자로 335",
+      "lat": 37.1964666,
+      "lng": 126.9812499,
+      "phone": "",
+      "url": "https://www.instagram.com/jangeojip",
+      "category": "한식>장어,먹장어요리",
+      "indoor": true,
+      "source": "naver",
+      "score": 60
+    },
+    {
+      "name": "리커피 동탄파라곤점",
+      "address": "경기도 화성시 동탄구 동탄반석로 172 141호 리커피 동탄파라곤점",
+      "lat": 37.2041653,
+      "lng": 127.0714964,
+      "phone": "",
+      "url": "https://www.instagram.com/leecoffee_paragon",
+      "category": "음식점>카페,디저트",
+      "indoor": true,
+      "source": "naver",
+      "score": 60
+    },
+    {
       "name": "에델바이스 로스터리 카페",
       "address": "경기도 화성시 동탄구 동탄오산로 29 B동 129호(동탄역디에트르퍼스티지 102동 출입구)",
       "lat": 37.1987249,
@@ -14825,18 +14837,6 @@
       "score": 50
     },
     {
-      "name": "주걱집 평택본점",
-      "address": "경기 평택시 만세로 1731",
-      "lat": 37.0122202534149,
-      "lng": 127.112031311518,
-      "phone": "031-653-3934",
-      "url": "http://place.map.kakao.com/222620579",
-      "category": "음식점 > 한식 > 육류,고기",
-      "indoor": true,
-      "source": "kakao",
-      "score": 50
-    },
-    {
       "name": "육팩트타운",
       "address": "경기 평택시 만세로 1731",
       "lat": 37.01222296515035,
@@ -14844,6 +14844,18 @@
       "phone": "031-653-3934",
       "url": "http://place.map.kakao.com/485129379",
       "category": "음식점 > 한식 > 육류,고기 > 갈비",
+      "indoor": true,
+      "source": "kakao",
+      "score": 50
+    },
+    {
+      "name": "주걱집 평택본점",
+      "address": "경기 평택시 만세로 1731",
+      "lat": 37.0122202534149,
+      "lng": 127.112031311518,
+      "phone": "031-653-3934",
+      "url": "http://place.map.kakao.com/222620579",
+      "category": "음식점 > 한식 > 육류,고기",
       "indoor": true,
       "source": "kakao",
       "score": 50
@@ -15515,6 +15527,18 @@
       "lng": 128.8737893,
       "phone": "",
       "url": "https://www.instagram.com/gosimsalon",
+      "category": "음식점>카페,디저트",
+      "indoor": true,
+      "source": "naver",
+      "score": 60
+    },
+    {
+      "name": "티티카카",
+      "address": "강원특별자치도 강릉시 용지각길8번길 10-1 1층",
+      "lat": 37.7600264,
+      "lng": 128.9056705,
+      "phone": "",
+      "url": "https://www.instagram.com/gangneung_titiqaqa",
       "category": "음식점>카페,디저트",
       "indoor": true,
       "source": "naver",
@@ -17555,18 +17579,6 @@
       "lng": 127.03160561789235,
       "phone": "010-3633-6223",
       "url": "http://place.map.kakao.com/1556766947",
-      "category": "음식점 > 카페 > 테마카페 > 애견카페",
-      "indoor": true,
-      "source": "kakao",
-      "score": 50
-    },
-    {
-      "name": "하늘정원 애견카페",
-      "address": "광주 광산구 체암로 1685-1",
-      "lat": 35.15015054853772,
-      "lng": 126.65616595120179,
-      "phone": "062-714-2898",
-      "url": "http://place.map.kakao.com/2133031883",
       "category": "음식점 > 카페 > 테마카페 > 애견카페",
       "indoor": true,
       "source": "kakao",
@@ -19865,6 +19877,18 @@
       "score": 50
     },
     {
+      "name": "베테랑바베큐",
+      "address": "울산 동구 일산진6길 28",
+      "lat": 35.4982949054389,
+      "lng": 129.430357122277,
+      "phone": "052-232-0092",
+      "url": "http://place.map.kakao.com/21697707",
+      "category": "음식점 > 한식 > 육류,고기",
+      "indoor": true,
+      "source": "kakao",
+      "score": 50
+    },
+    {
       "name": "멍클라쓰",
       "address": "울산 동구 해수욕장9길 14",
       "lat": 35.4923486760724,
@@ -19872,18 +19896,6 @@
       "phone": "",
       "url": "http://place.map.kakao.com/1029762046",
       "category": "음식점 > 카페 > 테마카페 > 애견카페",
-      "indoor": true,
-      "source": "kakao",
-      "score": 50
-    },
-    {
-      "name": "해동중화요리",
-      "address": "울산 동구 고늘로 80-30",
-      "lat": 35.500801170009,
-      "lng": 129.439036007747,
-      "phone": "010-4272-1919",
-      "url": "http://place.map.kakao.com/27235787",
-      "category": "음식점 > 중식 > 중국요리",
       "indoor": true,
       "source": "kakao",
       "score": 50
@@ -20172,18 +20184,6 @@
       "phone": "",
       "url": "https://blog.naver.com/foveocoffeelab",
       "category": "음식점>카페,디저트",
-      "indoor": true,
-      "source": "naver",
-      "score": 60
-    },
-    {
-      "name": "훈연당 본점",
-      "address": "경상남도 창원시 마산합포구 구산면 해양관광로 1363 훈연당",
-      "lat": 35.0915145,
-      "lng": 128.5787491,
-      "phone": "",
-      "url": "https://blog.naver.com/aoao75",
-      "category": "음식점>한식",
       "indoor": true,
       "source": "naver",
       "score": 60
@@ -20595,18 +20595,6 @@
       "indoor": true,
       "source": "kakao",
       "score": 50
-    },
-    {
-      "name": "빌스4339팻파크",
-      "address": "경상북도 포항시 남구 구룡포읍 동해안로 4339 빌스4339팻파크",
-      "lat": 35.9515863,
-      "lng": 129.5420615,
-      "phone": "",
-      "url": "",
-      "category": "음식점>카페,디저트",
-      "indoor": true,
-      "source": "naver",
-      "score": 60
     },
     {
       "name": "카페1703",
@@ -22797,6 +22785,19 @@
       "score": 80
     },
     {
+      "name": "뚝섬한강공원",
+      "address": "서울특별시 광진구 강변북로 2273 (자양동)",
+      "lat": 37.5294186076,
+      "lng": 127.0739939307,
+      "phone": "",
+      "url": "https://map.kakao.com/link/search/%EB%9A%9D%EC%84%AC%ED%95%9C%EA%B0%95%EA%B3%B5%EC%9B%90",
+      "category": "관광지",
+      "indoor": false,
+      "source": "tourapi",
+      "verified": "한국관광공사 반려동물 동반 공식 인증",
+      "score": 80
+    },
+    {
       "name": "덕수공원 반려견놀이터",
       "address": "경기 고양시 덕양구 동산동 332",
       "lat": 37.6414513652171,
@@ -22959,18 +22960,6 @@
       "lng": 126.885968005642,
       "phone": "",
       "url": "http://place.map.kakao.com/3130075",
-      "category": "가정,생활 > 반려동물 > 반려견놀이터",
-      "indoor": false,
-      "source": "kakao",
-      "score": 50
-    },
-    {
-      "name": "호텔 독스",
-      "address": "서울 용산구 청파로 213",
-      "lat": 37.5385716203205,
-      "lng": 126.970366578809,
-      "phone": "1811-7161",
-      "url": "http://place.map.kakao.com/1158937534",
       "category": "가정,생활 > 반려동물 > 반려견놀이터",
       "indoor": false,
       "source": "kakao",
@@ -23315,19 +23304,6 @@
       "score": 80
     },
     {
-      "name": "뚝섬한강공원",
-      "address": "서울특별시 광진구 강변북로 2273 (자양동)",
-      "lat": 37.5294186076,
-      "lng": 127.0739939307,
-      "phone": "",
-      "url": "https://map.kakao.com/link/search/%EB%9A%9D%EC%84%AC%ED%95%9C%EA%B0%95%EA%B3%B5%EC%9B%90",
-      "category": "관광지",
-      "indoor": false,
-      "source": "tourapi",
-      "verified": "한국관광공사 반려동물 동반 공식 인증",
-      "score": 80
-    },
-    {
       "name": "오금공원",
       "address": "서울특별시 송파구 오금로 363 (오금동)",
       "lat": 37.5052557863,
@@ -23432,6 +23408,19 @@
       "score": 80
     },
     {
+      "name": "긴고랑공원",
+      "address": "서울특별시 광진구 긴고랑로 143 (중곡동)",
+      "lat": 37.5589071568,
+      "lng": 127.0910359861,
+      "phone": "",
+      "url": "https://map.kakao.com/link/search/%EA%B8%B4%EA%B3%A0%EB%9E%91%EA%B3%B5%EC%9B%90",
+      "category": "관광지",
+      "indoor": false,
+      "source": "tourapi",
+      "verified": "한국관광공사 반려동물 동반 공식 인증",
+      "score": 80
+    },
+    {
       "name": "일산서구 반려동물공원",
       "address": "경기 고양시 일산서구 대화동 1993",
       "lat": 37.6859565325125,
@@ -23519,12 +23508,12 @@
       "score": 50
     },
     {
-      "name": "데일리독",
-      "address": "서울 관악구 봉천로27길 62",
-      "lat": 37.4858648945464,
-      "lng": 126.941852362256,
-      "phone": "010-6431-9403",
-      "url": "http://place.map.kakao.com/1005079991",
+      "name": "호텔 독스",
+      "address": "서울 용산구 청파로 213",
+      "lat": 37.5385716203205,
+      "lng": 126.970366578809,
+      "phone": "1811-7161",
+      "url": "http://place.map.kakao.com/1158937534",
       "category": "가정,생활 > 반려동물 > 반려견놀이터",
       "indoor": false,
       "source": "kakao",
@@ -24233,8 +24222,8 @@
     {
       "name": "부천송내 반려견놀이터",
       "address": "경기 부천시 소사구 송내동 249-9",
-      "lat": 37.4878144102465,
-      "lng": 126.745940427887,
+      "lat": 37.48779754397842,
+      "lng": 126.74647757194194,
       "phone": "032-625-2807",
       "url": "http://place.map.kakao.com/331229114",
       "category": "가정,생활 > 반려동물 > 반려견놀이터",
@@ -25262,12 +25251,12 @@
       "score": 80
     },
     {
-      "name": "다람산공원",
-      "address": "경기도 화성시 병점중앙로 229 (진안동)",
-      "lat": 37.2173735096,
-      "lng": 127.0338980205,
+      "name": "서수원체육공원",
+      "address": "경기도 수원시 권선구 고색동 904-30",
+      "lat": 37.2473522548,
+      "lng": 126.9712139819,
       "phone": "",
-      "url": "https://map.kakao.com/link/search/%EB%8B%A4%EB%9E%8C%EC%82%B0%EA%B3%B5%EC%9B%90",
+      "url": "https://map.kakao.com/link/search/%EC%84%9C%EC%88%98%EC%9B%90%EC%B2%B4%EC%9C%A1%EA%B3%B5%EC%9B%90",
       "category": "관광지",
       "indoor": false,
       "source": "tourapi",
@@ -25359,18 +25348,6 @@
       "score": 50
     },
     {
-      "name": "놀러오개 분당점",
-      "address": "경기 성남시 중원구 도촌로7번길 4-1",
-      "lat": 37.4150321132043,
-      "lng": 127.149868564204,
-      "phone": "",
-      "url": "http://place.map.kakao.com/749378897",
-      "category": "가정,생활 > 반려동물 > 반려견놀이터",
-      "indoor": false,
-      "source": "kakao",
-      "score": 50
-    },
-    {
       "name": "성남 탄천 반려견놀이터",
       "address": "경기 성남시 중원구 성남동 1759",
       "lat": 37.4312103546639,
@@ -25425,6 +25402,18 @@
       "lng": 127.134096224262,
       "phone": "0503-7153-5430",
       "url": "http://place.map.kakao.com/1919648477",
+      "category": "가정,생활 > 반려동물 > 반려견놀이터",
+      "indoor": false,
+      "source": "kakao",
+      "score": 50
+    },
+    {
+      "name": "헬로우버디",
+      "address": "경기 용인시 수지구 고기로45번길 62",
+      "lat": 37.338593048865214,
+      "lng": 127.09246921583753,
+      "phone": "010-4332-3514",
+      "url": "http://place.map.kakao.com/1007540982",
       "category": "가정,생활 > 반려동물 > 반려견놀이터",
       "indoor": false,
       "source": "kakao",
@@ -25574,19 +25563,6 @@
       "score": 80
     },
     {
-      "name": "광교산체육공원",
-      "address": "경기도 용인시 수지구 동천로 557 (고기동)",
-      "lat": 37.3528386939,
-      "lng": 127.0516842798,
-      "phone": "",
-      "url": "https://map.kakao.com/link/search/%EA%B4%91%EA%B5%90%EC%82%B0%EC%B2%B4%EC%9C%A1%EA%B3%B5%EC%9B%90",
-      "category": "관광지",
-      "indoor": false,
-      "source": "tourapi",
-      "verified": "한국관광공사 반려동물 동반 공식 인증",
-      "score": 80
-    },
-    {
       "name": "수지체육공원",
       "address": "경기도 용인시 수지구 신수로683번길 31 (풍덕천동)",
       "lat": 37.3300727258,
@@ -25645,6 +25621,19 @@
       "lng": 127.1692151962,
       "phone": "",
       "url": "https://map.kakao.com/link/search/%EC%9D%80%ED%96%89%EA%B3%B5%EC%9B%90",
+      "category": "관광지",
+      "indoor": false,
+      "source": "tourapi",
+      "verified": "한국관광공사 반려동물 동반 공식 인증",
+      "score": 80
+    },
+    {
+      "name": "사기막골근린공원",
+      "address": "경기도 성남시 중원구 사기막골로 209-1 (상대원동)",
+      "lat": 37.4461358012,
+      "lng": 127.1833863468,
+      "phone": "",
+      "url": "https://map.kakao.com/link/search/%EC%82%AC%EA%B8%B0%EB%A7%89%EA%B3%A8%EA%B7%BC%EB%A6%B0%EA%B3%B5%EC%9B%90",
       "category": "관광지",
       "indoor": false,
       "source": "tourapi",
@@ -25974,12 +25963,25 @@
       "score": 80
     },
     {
-      "name": "너른공원",
-      "address": "경기도 화성시 방교동 762",
-      "lat": 37.1818508432,
-      "lng": 127.0900161475,
+      "name": "개나리공원",
+      "address": "경기도 화성시 반송동 29",
+      "lat": 37.2095499793,
+      "lng": 127.0655148168,
       "phone": "",
-      "url": "https://map.kakao.com/link/search/%EB%84%88%EB%A5%B8%EA%B3%B5%EC%9B%90",
+      "url": "https://map.kakao.com/link/search/%EA%B0%9C%EB%82%98%EB%A6%AC%EA%B3%B5%EC%9B%90",
+      "category": "관광지",
+      "indoor": false,
+      "source": "tourapi",
+      "verified": "한국관광공사 반려동물 동반 공식 인증",
+      "score": 80
+    },
+    {
+      "name": "동탄호수공원",
+      "address": "경기도 화성시 동탄순환대로 69 (송동)",
+      "lat": 37.1669527885,
+      "lng": 127.1024487705,
+      "phone": "",
+      "url": "https://map.kakao.com/link/search/%EB%8F%99%ED%83%84%ED%98%B8%EC%88%98%EA%B3%B5%EC%9B%90",
       "category": "관광지",
       "indoor": false,
       "source": "tourapi",
@@ -26144,51 +26146,12 @@
       "score": 80
     },
     {
-      "name": "화정중앙공원",
-      "address": "경기도 고양시 덕양구 화신로 266-1 (화정동)",
-      "lat": 37.6309996796,
-      "lng": 126.8318242453,
-      "phone": "",
-      "url": "https://map.kakao.com/link/search/%ED%99%94%EC%A0%95%EC%A4%91%EC%95%99%EA%B3%B5%EC%9B%90",
-      "category": "관광지",
-      "indoor": false,
-      "source": "tourapi",
-      "verified": "한국관광공사 반려동물 동반 공식 인증",
-      "score": 80
-    },
-    {
       "name": "백석어린이교통공원",
       "address": "경기도 고양시 일산동구 강송로 14 고양시 어린이교통공원",
       "lat": 37.6425310214,
       "lng": 126.795388359,
       "phone": "",
       "url": "https://map.kakao.com/link/search/%EB%B0%B1%EC%84%9D%EC%96%B4%EB%A6%B0%EC%9D%B4%EA%B5%90%ED%86%B5%EA%B3%B5%EC%9B%90",
-      "category": "관광지",
-      "indoor": false,
-      "source": "tourapi",
-      "verified": "한국관광공사 반려동물 동반 공식 인증",
-      "score": 80
-    },
-    {
-      "name": "지도공원",
-      "address": "경기도 고양시 덕양구 지도로80번길 38 (토당동)",
-      "lat": 37.6249975098,
-      "lng": 126.8267359909,
-      "phone": "",
-      "url": "https://map.kakao.com/link/search/%EC%A7%80%EB%8F%84%EA%B3%B5%EC%9B%90",
-      "category": "관광지",
-      "indoor": false,
-      "source": "tourapi",
-      "verified": "한국관광공사 반려동물 동반 공식 인증",
-      "score": 80
-    },
-    {
-      "name": "신원체육공원",
-      "address": "경기도 고양시 덕양구 호국로1254번길 11 (신원동)",
-      "lat": 37.6760396812,
-      "lng": 126.8764994471,
-      "phone": "",
-      "url": "https://map.kakao.com/link/search/%EC%8B%A0%EC%9B%90%EC%B2%B4%EC%9C%A1%EA%B3%B5%EC%9B%90",
       "category": "관광지",
       "indoor": false,
       "source": "tourapi",
@@ -26228,19 +26191,6 @@
       "lng": 126.8244142694,
       "phone": "",
       "url": "https://map.kakao.com/link/search/%EC%B6%A9%EC%9E%A5%EA%B7%BC%EB%A6%B0%EC%B2%B4%EC%9C%A1%EA%B3%B5%EC%9B%90",
-      "category": "관광지",
-      "indoor": false,
-      "source": "tourapi",
-      "verified": "한국관광공사 반려동물 동반 공식 인증",
-      "score": 80
-    },
-    {
-      "name": "도래울바람물공원",
-      "address": "경기도 고양시 덕양구 도내동 980",
-      "lat": 37.6290534454,
-      "lng": 126.874414857,
-      "phone": "",
-      "url": "https://map.kakao.com/link/search/%EB%8F%84%EB%9E%98%EC%9A%B8%EB%B0%94%EB%9E%8C%EB%AC%BC%EA%B3%B5%EC%9B%90",
       "category": "관광지",
       "indoor": false,
       "source": "tourapi",
@@ -26345,6 +26295,19 @@
       "lng": 126.7474464148,
       "phone": "",
       "url": "https://map.kakao.com/link/search/%EC%83%88%EC%95%94%EA%B3%B5%EC%9B%90",
+      "category": "관광지",
+      "indoor": false,
+      "source": "tourapi",
+      "verified": "한국관광공사 반려동물 동반 공식 인증",
+      "score": 80
+    },
+    {
+      "name": "뱃길조각공원",
+      "address": "경기도 김포시 고촌읍 신곡리 680-4",
+      "lat": 37.5852539893,
+      "lng": 126.774958503,
+      "phone": "",
+      "url": "https://map.kakao.com/link/search/%EB%B1%83%EA%B8%B8%EC%A1%B0%EA%B0%81%EA%B3%B5%EC%9B%90",
       "category": "관광지",
       "indoor": false,
       "source": "tourapi",
@@ -26491,19 +26454,6 @@
       "score": 80
     },
     {
-      "name": "조안면체육공원",
-      "address": "경기도 남양주시 조안면 진중리 146",
-      "lat": 37.5571530234,
-      "lng": 127.3117159588,
-      "phone": "",
-      "url": "https://map.kakao.com/link/search/%EC%A1%B0%EC%95%88%EB%A9%B4%EC%B2%B4%EC%9C%A1%EA%B3%B5%EC%9B%90",
-      "category": "관광지",
-      "indoor": false,
-      "source": "tourapi",
-      "verified": "한국관광공사 반려동물 동반 공식 인증",
-      "score": 80
-    },
-    {
       "name": "황금산문화공원",
       "address": "경기도 남양주시 경춘로 434 (다산동)",
       "lat": 37.607974961,
@@ -26608,19 +26558,6 @@
       "lng": 127.2222756894,
       "phone": "",
       "url": "https://map.kakao.com/link/search/%EC%98%A4%EB%82%A8%ED%98%B8%EC%88%98%EA%B3%B5%EC%9B%90",
-      "category": "관광지",
-      "indoor": false,
-      "source": "tourapi",
-      "verified": "한국관광공사 반려동물 동반 공식 인증",
-      "score": 80
-    },
-    {
-      "name": "망우 역사문화공원",
-      "address": "서울특별시 중랑구 망우로 570 (망우동)",
-      "lat": 37.5984057744,
-      "lng": 127.114832694,
-      "phone": "",
-      "url": "https://map.kakao.com/link/search/%EB%A7%9D%EC%9A%B0%20%EC%97%AD%EC%82%AC%EB%AC%B8%ED%99%94%EA%B3%B5%EC%9B%90",
       "category": "관광지",
       "indoor": false,
       "source": "tourapi",
@@ -26754,6 +26691,19 @@
       "lng": 126.7897691299,
       "phone": "",
       "url": "https://map.kakao.com/link/search/%ED%86%B5%EC%9D%BC%EA%B3%B5%EC%9B%90(%ED%8C%8C%EC%A3%BC)",
+      "category": "관광지",
+      "indoor": false,
+      "source": "tourapi",
+      "verified": "한국관광공사 반려동물 동반 공식 인증",
+      "score": 80
+    },
+    {
+      "name": "김포한강야생조류생태공원",
+      "address": "경기도 김포시 김포한강11로 455 (운양동)",
+      "lat": 37.654836213,
+      "lng": 126.6993634541,
+      "phone": "",
+      "url": "https://map.kakao.com/link/search/%EA%B9%80%ED%8F%AC%ED%95%9C%EA%B0%95%EC%95%BC%EC%83%9D%EC%A1%B0%EB%A5%98%EC%83%9D%ED%83%9C%EA%B3%B5%EC%9B%90",
       "category": "관광지",
       "indoor": false,
       "source": "tourapi",
@@ -27167,19 +27117,6 @@
       "score": 50
     },
     {
-      "name": "남양체육공원",
-      "address": "경기도 화성시 남양읍 시청로45번길 95",
-      "lat": 37.2100262312,
-      "lng": 126.8264670466,
-      "phone": "",
-      "url": "https://map.kakao.com/link/search/%EB%82%A8%EC%96%91%EC%B2%B4%EC%9C%A1%EA%B3%B5%EC%9B%90",
-      "category": "관광지",
-      "indoor": false,
-      "source": "tourapi",
-      "verified": "한국관광공사 반려동물 동반 공식 인증",
-      "score": 80
-    },
-    {
       "name": "비봉습지공원",
       "address": "경기도 화성시 비봉면 유포리",
       "lat": 37.2612512187,
@@ -27336,6 +27273,19 @@
       "score": 80
     },
     {
+      "name": "기배역사공원",
+      "address": "경기도 화성시 기안동 927",
+      "lat": 37.2146923683,
+      "lng": 126.983647097,
+      "phone": "",
+      "url": "https://map.kakao.com/link/search/%EA%B8%B0%EB%B0%B0%EC%97%AD%EC%82%AC%EA%B3%B5%EC%9B%90",
+      "category": "관광지",
+      "indoor": false,
+      "source": "tourapi",
+      "verified": "한국관광공사 반려동물 동반 공식 인증",
+      "score": 80
+    },
+    {
       "name": "이충레포츠공원 이충반려견동반시민쉼터",
       "address": "경기 평택시 장안웃길 149",
       "lat": 37.06603189774,
@@ -27468,6 +27418,18 @@
       "score": 50
     },
     {
+      "name": "메종드멍",
+      "address": "경기 평택시 서정역로36번길 99",
+      "lat": 37.0579255618737,
+      "lng": 127.061525154161,
+      "phone": "010-5796-2673",
+      "url": "http://place.map.kakao.com/1096251651",
+      "category": "가정,생활 > 반려동물 > 반려견놀이터",
+      "indoor": false,
+      "source": "kakao",
+      "score": 50
+    },
+    {
       "name": "코코모모",
       "address": "경기 평택시 고덕면 방시천길 50",
       "lat": 37.02078912935699,
@@ -27486,18 +27448,6 @@
       "lng": 127.07024350444995,
       "phone": "010-2466-7959",
       "url": "http://place.map.kakao.com/136282410",
-      "category": "가정,생활 > 반려동물 > 반려견놀이터",
-      "indoor": false,
-      "source": "kakao",
-      "score": 50
-    },
-    {
-      "name": "평택시농업생태원 모두마루",
-      "address": "경기 평택시 오성면 청오로 33-34",
-      "lat": 37.0145472033556,
-      "lng": 126.983454073081,
-      "phone": "031-8024-4566",
-      "url": "http://place.map.kakao.com/1195295554",
       "category": "가정,생활 > 반려동물 > 반려견놀이터",
       "indoor": false,
       "source": "kakao",
@@ -27795,6 +27745,18 @@
       "score": 50
     },
     {
+      "name": "강릉시 펫파크",
+      "address": "강원특별자치도 강릉시 성산면 산북리 1195",
+      "lat": 37.698597804416,
+      "lng": 128.828772077786,
+      "phone": "",
+      "url": "http://place.map.kakao.com/1296279413",
+      "category": "가정,생활 > 반려동물 > 반려견놀이터",
+      "indoor": false,
+      "source": "kakao",
+      "score": 50
+    },
+    {
       "name": "하늘목장 반려견놀이터",
       "address": "강원특별자치도 평창군 대관령면 횡계리 산 462-11",
       "lat": 37.70484909334376,
@@ -27805,19 +27767,6 @@
       "indoor": false,
       "source": "kakao",
       "score": 50
-    },
-    {
-      "name": "강릉 남산공원",
-      "address": "강원특별자치도 강릉시 강변로 224-12 (노암동)",
-      "lat": 37.747374675,
-      "lng": 128.8934560415,
-      "phone": "",
-      "url": "https://map.kakao.com/link/search/%EA%B0%95%EB%A6%89%20%EB%82%A8%EC%82%B0%EA%B3%B5%EC%9B%90",
-      "category": "관광지",
-      "indoor": false,
-      "source": "tourapi",
-      "verified": "한국관광공사 반려동물 동반 공식 인증",
-      "score": 80
     },
     {
       "name": "사근진해중공원 전망대",
@@ -28675,7 +28624,7 @@
       "address": "대전 대덕구 석봉북로 26",
       "lat": 36.4497408885277,
       "lng": 127.425039997205,
-      "phone": "0503-7154-3431",
+      "phone": "0503-7154-3185",
       "url": "http://place.map.kakao.com/1103829964",
       "category": "가정,생활 > 반려동물 > 반려견놀이터",
       "indoor": false,
@@ -30195,6 +30144,18 @@
       "score": 80
     },
     {
+      "name": "이순신공원 반려견놀이터",
+      "address": "전남 여수시 웅천동 1865-1",
+      "lat": 34.744000895972,
+      "lng": 127.678077139517,
+      "phone": "",
+      "url": "http://place.map.kakao.com/1208961187",
+      "category": "가정,생활 > 반려동물 > 반려견놀이터",
+      "indoor": false,
+      "source": "kakao",
+      "score": 50
+    },
+    {
       "name": "포근하개",
       "address": "전남 여수시 장성1길 26",
       "lat": 34.7546811293885,
@@ -30707,6 +30668,18 @@
       "score": 50
     },
     {
+      "name": "해운대구반려동물놀이터",
+      "address": "부산 해운대구 송정동 581",
+      "lat": 35.1903612759928,
+      "lng": 129.202619986571,
+      "phone": "",
+      "url": "http://place.map.kakao.com/954014292",
+      "category": "가정,생활 > 반려동물 > 반려견놀이터",
+      "indoor": false,
+      "source": "kakao",
+      "score": 50
+    },
+    {
       "name": "동숲",
       "address": "부산 남구 신선로 428",
       "lat": 35.1218908808333,
@@ -30777,19 +30750,6 @@
       "indoor": false,
       "source": "kakao",
       "score": 50
-    },
-    {
-      "name": "송림공원",
-      "address": "부산광역시 해운대구 우동 702",
-      "lat": 35.1571550093,
-      "lng": 129.1541529333,
-      "phone": "",
-      "url": "https://map.kakao.com/link/search/%EC%86%A1%EB%A6%BC%EA%B3%B5%EC%9B%90",
-      "category": "관광지",
-      "indoor": false,
-      "source": "tourapi",
-      "verified": "한국관광공사 반려동물 동반 공식 인증",
-      "score": 80
     },
     {
       "name": "동백공원",
@@ -31018,12 +30978,12 @@
       "score": 80
     },
     {
-      "name": "증산공원",
-      "address": "부산광역시 동구 성북로36번길 46 (범일동)",
-      "lat": 35.1379469323,
-      "lng": 129.051684593,
+      "name": "부산 중앙공원",
+      "address": "부산광역시 서구 망양로193번길 187 (동대신동2가)",
+      "lat": 35.1121438284,
+      "lng": 129.027954028,
       "phone": "",
-      "url": "https://map.kakao.com/link/search/%EC%A6%9D%EC%82%B0%EA%B3%B5%EC%9B%90",
+      "url": "https://map.kakao.com/link/search/%EB%B6%80%EC%82%B0%20%EC%A4%91%EC%95%99%EA%B3%B5%EC%9B%90",
       "category": "관광지",
       "indoor": false,
       "source": "tourapi",
@@ -31031,12 +30991,25 @@
       "score": 80
     },
     {
-      "name": "부산 중앙공원",
-      "address": "부산광역시 서구 망양로193번길 187 (동대신동2가)",
-      "lat": 35.1121438284,
-      "lng": 129.027954028,
+      "name": "구덕문화공원",
+      "address": "부산광역시 서구 꽃마을로163번길 73 (서대신동3가)",
+      "lat": 35.1264334874,
+      "lng": 129.0058166756,
       "phone": "",
-      "url": "https://map.kakao.com/link/search/%EB%B6%80%EC%82%B0%20%EC%A4%91%EC%95%99%EA%B3%B5%EC%9B%90",
+      "url": "https://map.kakao.com/link/search/%EA%B5%AC%EB%8D%95%EB%AC%B8%ED%99%94%EA%B3%B5%EC%9B%90",
+      "category": "관광지",
+      "indoor": false,
+      "source": "tourapi",
+      "verified": "한국관광공사 반려동물 동반 공식 인증",
+      "score": 80
+    },
+    {
+      "name": "민주공원",
+      "address": "부산광역시 중구 민주공원길 19 (영주동)",
+      "lat": 35.1093802515,
+      "lng": 129.0281096457,
+      "phone": "",
+      "url": "https://map.kakao.com/link/search/%EB%AF%BC%EC%A3%BC%EA%B3%B5%EC%9B%90",
       "category": "관광지",
       "indoor": false,
       "source": "tourapi",
@@ -31495,19 +31468,6 @@
       "indoor": false,
       "source": "kakao",
       "score": 50
-    },
-    {
-      "name": "울산대공원",
-      "address": "울산광역시 남구 대공원로 94 (옥동)",
-      "lat": 35.5316989268,
-      "lng": 129.2935470479,
-      "phone": "",
-      "url": "https://map.kakao.com/link/search/%EC%9A%B8%EC%82%B0%EB%8C%80%EA%B3%B5%EC%9B%90",
-      "category": "관광지",
-      "indoor": false,
-      "source": "tourapi",
-      "verified": "한국관광공사 반려동물 동반 공식 인증",
-      "score": 80
     },
     {
       "name": "구영공원",
@@ -32156,19 +32116,6 @@
       "score": 80
     },
     {
-      "name": "구포생활체육공원",
-      "address": "경상북도 구미시 옥계2공단로3길 133 (구포동)",
-      "lat": 36.13351711,
-      "lng": 128.4034389416,
-      "phone": "",
-      "url": "https://map.kakao.com/link/search/%EA%B5%AC%ED%8F%AC%EC%83%9D%ED%99%9C%EC%B2%B4%EC%9C%A1%EA%B3%B5%EC%9B%90",
-      "category": "관광지",
-      "indoor": false,
-      "source": "tourapi",
-      "verified": "한국관광공사 반려동물 동반 공식 인증",
-      "score": 80
-    },
-    {
       "name": "동락공원",
       "address": "경상북도 구미시 3공단1로 191 (진평동)",
       "lat": 36.0971156643,
@@ -32520,6 +32467,18 @@
       "score": 50
     },
     {
+      "name": "다올",
+      "address": "경남 거제시 장평1로7길 31",
+      "lat": 34.89299428880416,
+      "lng": 128.61601425803693,
+      "phone": "010-3578-8624",
+      "url": "http://place.map.kakao.com/703748199",
+      "category": "가정,생활 > 반려동물 > 반려견놀이터",
+      "indoor": false,
+      "source": "kakao",
+      "score": 50
+    },
+    {
       "name": "거제시 반려견 놀이터",
       "address": "경남 거제시 상동동 161-3",
       "lat": 34.8689050392869,
@@ -32530,19 +32489,6 @@
       "indoor": false,
       "source": "kakao",
       "score": 50
-    },
-    {
-      "name": "이순신공원",
-      "address": "경상남도 통영시 정량동 688-1",
-      "lat": 34.843838231,
-      "lng": 128.442923244,
-      "phone": "",
-      "url": "https://map.kakao.com/link/search/%EC%9D%B4%EC%88%9C%EC%8B%A0%EA%B3%B5%EC%9B%90",
-      "category": "관광지",
-      "indoor": false,
-      "source": "tourapi",
-      "verified": "한국관광공사 반려동물 동반 공식 인증",
-      "score": 80
     },
     {
       "name": "남망산 조각공원",
@@ -32733,19 +32679,6 @@
       "lng": 127.7753183779,
       "phone": "",
       "url": "https://map.kakao.com/link/search/%ED%95%98%EB%8F%99%EB%AA%A9%EB%8F%84%EA%B3%B5%EC%9B%90",
-      "category": "관광지",
-      "indoor": false,
-      "source": "tourapi",
-      "verified": "한국관광공사 반려동물 동반 공식 인증",
-      "score": 80
-    },
-    {
-      "name": "평사리공원",
-      "address": "경상남도 하동군 악양면 평사리",
-      "lat": 35.1361393786,
-      "lng": 127.6913174896,
-      "phone": "",
-      "url": "https://map.kakao.com/link/search/%ED%8F%89%EC%82%AC%EB%A6%AC%EA%B3%B5%EC%9B%90",
       "category": "관광지",
       "indoor": false,
       "source": "tourapi",
