@@ -86,6 +86,39 @@ function getGroqKey() {
   groqKeyIndex++;
   return key;
 }
+
+// ── AI 응답 한자 제거 (한국어 텍스트에 섞여 나오는 한자 치환/제거) ──
+// 자주 섞여 나오는 한자어는 한글로 치환하고, 매핑에 없는 한자는 제거한다.
+const HANJA_MAP = {
+  // 두 글자 한자어 (먼저 치환)
+  '愛犬': '애견', '反侶': '반려', '伴侶': '반려', '同伴': '동반', '伴同': '동반',
+  '散步': '산책', '公園': '공원', '食堂': '식당', '旅行': '여행', '休息': '휴식',
+  '空間': '공간', '時間': '시간', '場所': '장소', '風景': '풍경', '緑地': '녹지',
+  // 한 글자
+  '犬': '견', '見': '견', '愛': '애', '反': '반', '侶': '려', '伴': '반',
+  '主': '주', '人': '인', '散': '산', '步': '보', '公': '공', '園': '원',
+  '車': '차', '道': '로', '路': '로', '店': '점', '食': '식', '堂': '당',
+  '同': '동', '旅': '여', '行': '행', '休': '휴', '息': '식', '空': '공',
+  '間': '간', '時': '시', '場': '장', '所': '소', '風': '풍', '景': '경',
+  '美': '미', '麗': '려'
+};
+function cleanKorean(text) {
+  if (!text || typeof text !== 'string') return text;
+  let out = text;
+  // 두 글자 한자어 먼저 치환
+  for (const [hanja, hangul] of Object.entries(HANJA_MAP)) {
+    if (hanja.length === 2) out = out.split(hanja).join(hangul);
+  }
+  // 한 글자 한자 치환
+  for (const [hanja, hangul] of Object.entries(HANJA_MAP)) {
+    if (hanja.length === 1) out = out.split(hanja).join(hangul);
+  }
+  // 매핑에 없는 나머지 한자(CJK 통합 한자)는 제거
+  out = out.replace(/[\u4e00-\u9fff\u3400-\u4dbf]/g, '');
+  // 한자 제거로 생긴 이중 공백 정리
+  out = out.replace(/ {2,}/g, ' ').trim();
+  return out;
+}
 const NAVER_CLIENT_ID = process.env.NAVER_CLIENT_ID;
 const NAVER_CLIENT_SECRET = process.env.NAVER_CLIENT_SECRET;
 const TOUR_API_KEY = process.env.TOUR_API_KEY;
@@ -881,7 +914,7 @@ app.post('/api/generate-course', async (req, res) => {
           model: 'llama-3.1-8b-instant',
           max_tokens: 120,
           messages: [
-            { role: 'system', content: '너는 반려견 드라이브 코스를 소개하는 따뜻한 어시스턴트야. 항상 한국어 존댓말로 답해.' },
+            { role: 'system', content: '너는 반려견 드라이브 코스를 소개하는 따뜻한 어시스턴트야. 항상 순수 한국어 한글 존댓말로만 답하고 한자(漢字)나 영어는 절대 쓰지 마.' },
             { role: 'user', content: `이 코스를 설레고 따뜻하게 한 줄로 소개해줘. (40자 이내, 이모지 1개, 한국어 존댓말)
 코스: ${placeNames}
 드라이브: ${course.driveTime}
@@ -892,7 +925,7 @@ ${weatherInfo ? '날씨: '+weatherInfo : ''}
           headers: { 'Authorization': `Bearer ${getGroqKey()}`, 'Content-Type': 'application/json' },
           timeout: 8000
         });
-        course.aiComment = response.data.choices[0]?.message?.content?.trim() || '';
+        course.aiComment = cleanKorean(response.data.choices[0]?.message?.content?.trim()) || '';
       }));
     } catch(e) {
       console.error('AI 설명 생성 오류:', e.message);
@@ -1391,7 +1424,7 @@ app.post('/api/chat', async (req, res) => {
       timeout: 15000
     });
 
-    const reply = response.data.content[0]?.text?.trim() || '죄송해요, 잠시 후 다시 시도해주세요.';
+    const reply = cleanKorean(response.data.content[0]?.text?.trim()) || '죄송해요, 잠시 후 다시 시도해주세요.';
     res.json({ reply });
   } catch (e) {
     console.error('챗봇 오류:', e.message);
@@ -1423,7 +1456,7 @@ app.post('/api/ai-review', async (req, res) => {
       temperature: 1.1,
       messages: [{
         role: 'system',
-        content: '너는 반려견 동반 여행 장소를 소개하는 큐레이터야. 직접 방문한 척하지 말고, 장소 특성을 중립적이고 따뜻하게 소개해줘. 반드시 한국어 존댓말로만 작성하고 영어나 다른 언어는 절대 사용하지 마. 반말 절대 금지.'
+        content: '너는 반려견 동반 여행 장소를 소개하는 큐레이터야. 직접 방문한 척하지 말고, 장소 특성을 중립적이고 따뜻하게 소개해줘. 반드시 순수 한국어 한글 존댓말로만 작성하고 영어, 한자(漢字), 다른 언어는 절대 사용하지 마. 예를 들어 반려견을 반려犬처럼 쓰지 말고 반드시 한글로만 써. 반말 절대 금지.'
       }, {
         role: 'user',
         content: `반려견 동반 장소 "${placeName}"(${category || '장소'}, ${address || ''})을 소개해줘. 스타일: ${style} 장소명을 다시 언급하지 말 것. 장소 특성이나 분위기, 강아지 관련 정보로 바로 시작할 것. 직접 방문한 것처럼 1인칭으로 쓰지 말 것. 매번 다른 문장 구조로 시작할 것. 이모지 1개 포함. 한국어로.`
@@ -1436,7 +1469,7 @@ app.post('/api/ai-review', async (req, res) => {
       timeout: 8000
     });
 
-    const review = response.data.choices[0]?.message?.content?.trim() || null;
+    const review = cleanKorean(response.data.choices[0]?.message?.content?.trim()) || null;
     console.log(`AI 후기 생성 [${placeName}]: ${review}`);
     res.json({ review });
   } catch (e) {
