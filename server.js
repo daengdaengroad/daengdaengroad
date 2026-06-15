@@ -115,7 +115,9 @@ function cleanKorean(text) {
   }
   // 매핑에 없는 나머지 한자(CJK 통합 한자)는 제거
   out = out.replace(/[\u4e00-\u9fff\u3400-\u4dbf]/g, '');
-  // 한자 제거로 생긴 이중 공백 정리
+  // 라틴 문자로만 이루어진 단어 제거 (영어/독일어 등 외국어 단어가 섞인 경우)
+  out = out.replace(/\b[a-zA-ZÀ-žÄäÖöÜüß]{2,}\b/g, '');
+  // 한자/외국어 제거로 생긴 이중 공백 정리
   out = out.replace(/ {2,}/g, ' ').trim();
   return out;
 }
@@ -911,7 +913,7 @@ app.post('/api/generate-course', async (req, res) => {
         const placeNames = course.places.map(p => `${p.name}(${p.catTag==='cafe'?'카페':p.catTag==='restaurant'?'식당':'공원'})`).join(', ');
         const weatherInfo = req.body.weather || '';
         const response = await axios.post('https://api.groq.com/openai/v1/chat/completions', {
-          model: 'llama-3.1-8b-instant',
+          model: 'gemma2-9b-it',
           max_tokens: 120,
           messages: [
             { role: 'system', content: '너는 반려견 드라이브 코스를 소개하는 따뜻한 어시스턴트야. 항상 순수 한국어 한글 존댓말로만 답하고 한자(漢字)나 영어는 절대 쓰지 마.' },
@@ -1451,12 +1453,12 @@ app.post('/api/ai-review', async (req, res) => {
     const style = styles[Math.floor(Math.random() * styles.length)];
 
     const response = await axios.post('https://api.groq.com/openai/v1/chat/completions', {
-      model: 'llama-3.3-70b-versatile',
+      model: 'gemma2-9b-it',
       max_tokens: 150,
       temperature: 1.1,
       messages: [{
         role: 'system',
-        content: '너는 반려견 동반 여행 장소를 소개하는 큐레이터야. 직접 방문한 척하지 말고, 장소 특성을 중립적이고 따뜻하게 소개해줘. 반드시 순수 한국어 한글 존댓말로만 작성하고 영어, 한자(漢字), 다른 언어는 절대 사용하지 마. 예를 들어 반려견을 반려犬처럼 쓰지 말고 반드시 한글로만 써. 반말 절대 금지.'
+        content: '너는 반려견 동반 여행 장소를 소개하는 큐레이터야. 직접 방문한 척하지 말고, 장소 특성을 중립적이고 따뜻하게 소개해줘. 반드시 순수 한국어 한글 존댓말로만 작성해. 영어, 독일어, 프랑스어, 일본어, 중국어, 한자(漢字) 등 한국어가 아닌 언어는 단어 하나도 절대 사용하지 마. 이모지와 한글, 숫자, 한국어 문장부호만 허용. 반말 절대 금지.'
       }, {
         role: 'user',
         content: `반려견 동반 장소 "${placeName}"(${category || '장소'}, ${address || ''})을 소개해줘. 스타일: ${style} 장소명을 다시 언급하지 말 것. 장소 특성이나 분위기, 강아지 관련 정보로 바로 시작할 것. 직접 방문한 것처럼 1인칭으로 쓰지 말 것. 매번 다른 문장 구조로 시작할 것. 이모지 1개 포함. 한국어로.`
