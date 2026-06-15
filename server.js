@@ -787,7 +787,7 @@ app.post('/api/generate-course', async (req, res) => {
       if (places.length < 2) return true;
       for (let i = 0; i < places.length - 1; i++) {
         const d = calcDistance(places[i].lat, places[i].lng, places[i+1].lat, places[i+1].lng);
-        if (d > 20) return false;
+        if (d > 12) return false; // 장소 간 거리 12km 초과 시 탈락 (기존 20km → 12km 강화)
       }
       return true;
     }
@@ -803,18 +803,25 @@ app.post('/api/generate-course', async (req, res) => {
       if (hasBrandDuplicate(cafe, rest, park)) return null; // 체인점 중복 체크
       const maxDist = orderedPlaces.reduce((m, p) => Math.max(m, p.distance||0), 0);
       const firstName = orderedPlaces[0]?.name || '';
+      // 장소 간 이동 거리 계산 (출발지→1번, 1번→2번, 2번→3번)
+      const legDistances = orderedPlaces.map((p, idx) => {
+        if (idx === 0) return p.distance || 0; // 출발지→1번
+        const prev = orderedPlaces[idx - 1];
+        return calcDistance(prev.lat, prev.lng, p.lat, p.lng); // 이전 장소→현재 장소
+      });
+      const totalLegDist = legDistances.reduce((s, d) => s + d, 0);
       return {
         title: `${firstName} 코스`,
         theme: catOrder.map(c => c==='cafe'?'카페':c==='restaurant'?'식당':'공원').join('→'),
-        driveTime: calcDriveTime(maxDist),
-        driveMin: Math.round((maxDist / 50) * 60) + 20,
-        totalDistance: parseFloat(maxDist.toFixed(1)),
+        driveTime: calcDriveTime(totalLegDist),
+        driveMin: Math.round((totalLegDist / 50) * 60) + 20,
+        totalDistance: parseFloat(totalLegDist.toFixed(1)),
         score: getSmartScore(orderedPlaces[0]),
         places: orderedPlaces.map((p, idx) => ({
           name: p.name, address: p.address || '',
-          distance: parseFloat((p.distance||0).toFixed(1)),
-          driveTime: calcDriveTime(p.distance||0),
-          driveMin: Math.round(((p.distance||0)/80)*60),
+          distance: parseFloat(legDistances[idx].toFixed(1)),
+          driveTime: calcDriveTime(legDistances[idx]),
+          driveMin: Math.round((legDistances[idx]/50)*60) + (idx===0?0:5),
           phone: p.phone || '', url: p.url || '',
           lat: p.lat, lng: p.lng,
           reason: idx===0 ? `${p.name}에서 시작하는 코스` : `함께 방문하기 좋은 곳`,
